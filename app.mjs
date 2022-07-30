@@ -17,7 +17,6 @@ let rheos_processes = {}
 let mode = false
 let timer
 let buffer_processing = false
-let listening = false
 const group_buffer = []
 const execFileSync = util.promisify(child.execFile);
 const spawn = (child.spawn)
@@ -61,7 +60,6 @@ async function monitor(){
 }
 async function add_listeners() {	
 	const listeners = await rheos_connection[0]
-	listening = true
     listeners.write("system", "register_for_change_events", { enable: "on" })
 	listeners
 		.on({ commandGroup: "system", command: "heart_beat" }, async (res) => {
@@ -640,7 +638,7 @@ async function group_command_buffer(){
 			buffer_processing = true
 			const  res = await heos_command("group","set_group",{pid : group_buffer[0]}).catch(()=> {group_buffer.shift(); resolve(group_buffer)})
 			if (res?.result == "fail") {
-				console.log("GROUPING FAILED")
+				console.error("GROUPING FAILED",res)
 				group_buffer.shift()
 				resolve(group_buffer)		
 			} else {
@@ -667,12 +665,12 @@ async function group_command_buffer(){
 }
 async function wait_group_change(){
 	return new Promise(async function (resolve,reject){
- 		rheos_connection[1].once({ commandGroup: "event", command: "groups_changed" },async (res) =>{
+ 		rheos_connection[0].once({ commandGroup: "event", command: "groups_changed" },async (res) =>{
 			group_buffer.shift()
 			await get_heos_groups()
 			buffer_processing = false
 			resolve(res)})
-		rheos_connection[1].onError(async (error) => {
+		rheos_connection[0].onError(async (error) => {
 			group_buffer.shift()
 			buffer_processing = false
 			if (!res.parsed.eid == 12){console.error("BUFFER",error)}
