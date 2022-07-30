@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<squeeze2upnp>
+  <common>
+    <enabled>0</enabled>
+    <streambuf_size>1048576</streambuf_size>
+    <output_size>4194304</output_size>
+    <stream_length>-3</stream_length>
+    <codecs>aac,ogg,flc,alc,pcm,mp3</codecs>
+    <forced_mimetypes>audio/mpeg,audio/vnd.dlna.adts,audio/mp4,audio/x-ms-wma,application/ogg,audio/x-flac</forced_mimetypes>
+    <mode>
+      flc:
+      <q>0</q>
+    </mode>
+    <raw_audio_format>raw,wav,aif</raw_audio_format>
+    <sample_rate>48000</sample_rate>
+    <L24_format>2</L24_format>
+    <roon_mode>1</roon_mode>
+    <volume_on_play>-1</volume_on_play>
+    <accept_nexturl>0</accept_nexturl>
+    <next_delay>30</next_delay>
+  </common>
+  <device>
+    <udn>uuid:36e6fd35-a528-c225-4bc4-429578de9c1c</udn>
+    <name>[LG] Study TV</name>
+    <friendly_name>[LG] Study TV</friendly_name>
+    <mac>bb:bb:50:41:67:f5</mac>
+    <enabled>1</enabled>
+  </device>
+</squeeze2upnp>
