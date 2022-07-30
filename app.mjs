@@ -180,10 +180,10 @@ async function create_root_xml(){
 	}) 
 }
 async function start_up(){	
-	const heos = [HeosApi.discoverAndConnect({timeout:1000,port:1255, address:ip.address()}),HeosApi.discoverAndConnect({timeout:1000,port:1267, address:ip.address()})]
+	const heos = [HeosApi.discoverAndConnect({timeout:1000,port:1255, address:ip.address()})]
         try {
             rheos_connection = await Promise.all(heos)
-			rheos_connection[1].socket.setMaxListeners(0)
+			rheos_connection[0].socket.setMaxListeners(0)
 				let players = await get_players(rheos_connection[0])	
 				for (let player of players)	{
 					player.status = my_settings[player.name]
@@ -299,7 +299,7 @@ function connect_roon(){
     const roon = new RoonApi({
 		extension_id: "com.Linvale115.test",
 		display_name: "RHeos",
-		display_version: "0.3.1-5",
+		display_version: "0.3.1-6",
 		publisher: "RHEOS",
 		email: "Linvale115@gmail.com",
 		website: "https://github.com/LINVALE/RHEOS",
@@ -638,8 +638,8 @@ async function group_command_buffer(){
 			buffer_processing = true
 			const  res = await heos_command("group","set_group",{pid : group_buffer[0]}).catch(()=> {group_buffer.shift(); resolve(group_buffer)})
 			if (res?.result == "fail") {
-				console.error("GROUPING FAILED",res)
 				group_buffer.shift()
+				console.error(res,group_buffer)
 				resolve(group_buffer)		
 			} else {
 				await wait_group_change()
