@@ -7,7 +7,7 @@ A ROON Extension to allow  control of Denon/Marantz HEOS devices from ROON.
 
 -   🔎 Automatic discovery of HEOS devices and make them available as ROON audio devices (via UPnP).
 -   🎯 Bi-directional Control of player play, pause, previous, volume, mute and grouping within HEOS players from ROON or Heos App.
--   🎶	Uses HEOS grouping to ensure synchronization with other HEOS players. Only groups HEOS players.
+-   🎶 Group HEOS devices from ROON. Uses HEOS grouping to ensure synchronization with other HEOS players. Only groups HEOS players.
 -   🔊 Does not use AirPlay so can stream at Hi-Resolution for HS2 players.
 -   🚫 Written in pure Javascript / Nodejs with limited module dependencies (heos-api, squeeze2UPnP, Xml2js,ip)
 
@@ -20,12 +20,12 @@ Clone a local copy of this repository to a local directory './RHEOS', or copy th
 
 From the command line try : “gh repo clone LINVALE/RHEOS ./RHEOS”
 
-(If successful you will see a ‘package,json’ and ‘package-lock.json’ as well as ‘app.mjs’ in the directory, along with other required files)
+(If successful you will see a ‘package.json’ and ‘package-lock.json’ as well as ‘app.mjs’ in the directory, along with other required files)
 
 Then switch to that directory and type “npm install”, This should create a folder ‘node_modules’ with the required dependencies.
 
 
-Install rheos using `npm`:
+To install rheos using `npm`: 
 
 ```
 npm install rheos
@@ -95,9 +95,10 @@ Learn more about using heos-api at:
 -   [The GitHub page](https://github.com/juliuscc/heos-api)
 -   [HEOS CLI Protocol Specification](http://rn.dmglobal.com/euheos/HEOS_CLI_ProtocolSpecification.pdf)
 
+
 Thanks to philippe44 for development of Squeeze2upnp. None of this would have been possible without the C binaries that allow HEOS players to emulate SlimDevices
--  
-Squeeze2UPnP https://github.com/philippe44/LMS-to-uPnP
+
+-  [Squeeze2UPnP] (https://github.com/philippe44/LMS-to-uPnP)
 
 Learn
 

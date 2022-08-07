@@ -239,17 +239,17 @@ async function start_roon() {
 	my_settings.host_ip ||(my_settings.host_ip = ip.address())
     my_settings.streambuf_size || (my_settings.streambuf_size = 524288)
 	my_settings.output_size || (my_settings.output_size = 8388608)
-	my_settings.stream_length || (my_settings.stream_length = -1)
+	my_settings.stream_length || (my_settings.stream_length = -3)
 	my_settings.seek_after_pause || (my_settings.seek_after_pause = 1)
 	my_settings.volume_on_play || (my_settings.volume_on_play = -1)
 	my_settings.volume_feedback || (my_settings.volume_feedback = 0)
 	my_settings.accept_nexturi|| (my_settings.accept_nexturi = 0)
 	my_settings.flac_header || (my_settings.flac_header = 2)
-	my_settings.keep_alive || (my_settings.keep_alive = -1)
-	my_settings.next_delay || (my_settings.next_delay = 30)
+	my_settings.keep_alive || (my_settings.keep_alive = 0)
+	my_settings.next_delay || (my_settings.next_delay = 15)
 	my_settings.flow || (my_settings.flow  = false)
-	my_settings.send_coverart || (my_settings.send_coverart = 1)
-	my_settings.send_metadata || (my_settings.send_metadata = 1)
+	my_settings.send_coverart || (my_settings.send_coverart = 0)
+	my_settings.send_metadata || (my_settings.send_metadata = 0)
     const svc_settings = new RoonApiSettings(roon, {
         get_settings: async function (cb) {
 			mode = true
@@ -671,6 +671,7 @@ async function group_dequeue(){
 		group_dequeue()
 	}).catch(err => {
 		busy = false
+
 		item.reject(err)
 		group_dequeue()
 	})
