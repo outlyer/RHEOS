@@ -58,7 +58,7 @@ Under RHEOS UPnP Settings there are options to select buffer-size, output-size, 
 
 ### Usage
 
-The HEOS players can be controlled as a normal ROON endpoint. Grouping is done through standard ROON grouping but behind the scenes these are translated to HEOS groups and you will see the change occure in the HEOS app.
+The HEOS players can be controlled as a normal ROON endpoint. Grouping is done through standard ROON grouping but behind the scenes these are translated to HEOS groups and you will see the change appear in the HEOS app.
 
 ### Known Limitations
 
@@ -76,11 +76,8 @@ Cover art and metadata are not shown on the HEOS app or on the playback device.
 
 Track progress on HEOS device and app does not show a track duration and resets after pause.
 
-Clicking "ok" in the Heos app should remove the error.
 
-
-
-Please report any issues via GitHub or raise on the ROON communuty site.
+#### Please report any issues via GitHub or raise on the ROON communuty site.
 
 Enjoy!
 
@@ -96,11 +93,10 @@ Learn more about using heos-api at:
 -   [HEOS CLI Protocol Specification](http://rn.dmglobal.com/euheos/HEOS_CLI_ProtocolSpecification.pdf)
 
 
-Thanks to philippe44 for development of Squeeze2upnp. None of this would have been possible without the C binaries that allow HEOS players to emulate SlimDevices
+Thanks to philippe44 for development of Squeeze2UPnP. None of this would have been possible without the C binaries that allow HEOS players to emulate SlimDevices
 
--  [Squeeze2UPnP] (https://github.com/philippe44/LMS-to-uPnP)
+-   [Squeeze2UPnP](https://github.com/philippe44/LMS-to-uPnP)
 
-Learn
 
 ## Contributing
 
