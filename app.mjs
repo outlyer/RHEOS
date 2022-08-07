@@ -131,7 +131,7 @@ async function add_listeners() {
 			if (player?.volume?.mute && (mute != player.volume.mute)) {
 				svc_transport.mute(rheos_outputs.get(player.name), (mute == 'on'? 'mute' : 'unmute'))
 			} 
-			else if (level > 0 && player?.volume?.level && level !== player?.volume?.level){
+			else if ((level > 0 && player?.volume?.level>0) && level !== player?.volume?.level){
 				svc_transport.change_volume(rheos_outputs.get(player.name), 'absolute',level)
 			}  
 		})
@@ -317,13 +317,18 @@ function connect_roon(){
 						if (player && op.volume){
 							player.output = op
 							player.zone = op.zone_id
-							player.volume = {level:op?.volume?.value, mute : op?.volume?.is_muted ? "on" : "off"}
+							
 							if (op?.volume?.is_muted !== old_op?.volume?.is_muted){	
-								heos_command("player", "set_mute", {pid : get_pid(op?.display_name) , state :op?.volume?.is_muted ? "on" : "off"}).catch(err=> console.error(err))
+								//player.volume.mute = mute
+                                    //player.pending_mute = true
+									await heos_command("player", "set_mute", {pid : get_pid(op?.display_name) , state :op?.volume?.is_muted ? "on" : "off"}).catch(err=> console.error(err))
+									player.volume = {level:op?.volume?.value, mute : op?.volume?.is_muted ? "on" : "off"}
 							}
-							else if (op?.volume?.value && op?.volume?.value !== old_op?.volume?.value ){
-								process.nextTick(()=>{player.volume.level = op.volume.value})
-								heos_command("player", "set_volume", {pid : get_pid(op?.display_name) , level :op?.volume?.value}).catch(err=> console.error(err))	
+							else if (op?.volume?.value && op?.volume?.value !== old_op?.volume?.value){
+								//process.nextTick(()=>{player.volume.level = op.volume.value})
+								//player.pending_vol = true
+								await heos_command("player", "set_volume", {pid : get_pid(op?.display_name) , level :op?.volume?.value}).catch(err=> console.error(err))
+								player.volume = {level:op?.volume?.value, mute : op?.volume?.is_muted ? "on" : "off"}	
 							}	
 						} 
 					}
@@ -376,13 +381,9 @@ function connect_roon(){
 							if(zone?.state === 'playing'   && z.seek_position % 5 == 0){
 								for (const output of zone.outputs){
 									const op =rheos_outputs.get(output.display_name) 
-									const player =	get_player(op?.display_name)
 									if (z.seek_position === null || z.seek_position === 0){
-										console.error(new Date().toString(),op?.display_name," ▶ ",zone.now_playing.one_line.line1,z.seek_position, "PLAYER POS")//,player.cur_pos/1000 || 0)
+										console.error(new Date().toString(),op?.display_name," ▶ ")//,player.cur_pos/1000 || 0)
 									} 
-									else {
-									//	await heos_command("player", "set_play_state", {pid : player.pid, state : "play" }).catch(err=> console.error("UNABLE TO SET PLAY",err))
-									}
 								}
 							}
 						}
@@ -650,6 +651,8 @@ async function set_permissions(){
 		await fs.chmod("./UPnP/Bin/squeeze2upnp-armv5te-static",0o755).catch("ERROR CHANGING MODE")
 	}
 }
+
+
 async function group_enqueue(group){
 	return new Promise((resolve,reject)=>{
    		queue_array.push({group,resolve,reject})
