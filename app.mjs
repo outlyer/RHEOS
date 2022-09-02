@@ -383,7 +383,7 @@ function connect_roon(){
 					return roon
 				}
 				if (cmd === "Changed") {
-					if (data.zones_changed || data.zones_added || data.zones_removed) { console.log("_".repeat(100))}
+					//if (data.zones_changed || data.zones_added || data.zones_removed) { console.log("_".repeat(100))}
 					//console.log(data)
 					if (data.zones_seek_changed){
 						for (const z of data.zones_seek_changed ){
@@ -425,7 +425,7 @@ function connect_roon(){
 					if (data.zones_added){
 						for  await (const e of data.zones_added){
 								//if (e.outputs.length >1) {
-									console.log("ZONE ADDED",e.display_name)
+									//console.log("ZONE ADDED",e.display_name)
 									console.log(e.outputs[0].display_name,get_pid(e.outputs[0].display_name),rheos_groups )
 									//let group = (rheos_groups.get(get_pid(e.outputs[0].display_name)))
 									let group = (rheos_groups.get(get_pid(e.outputs[0].display_name)))
@@ -435,7 +435,7 @@ await get_heos_groups()
 									let roon_group = (e.outputs.map(output => get_pid(output.display_name)))
 									let heos_group = group?.players ? group?.players.map(player => player.pid) : group
 									if(roon_group.length > 1 && (sum_array(roon_group) !==sum_array(heos_group))){
-										console.log("NEW GROUP NEEDED",JSON.stringify (roon_group),JSON.stringify(heos_group))
+										//console.log("NEW GROUP NEEDED",JSON.stringify (roon_group),JSON.stringify(heos_group))
 									//console.log("NEW GROUP NEEDED")
 									//let heos_group = group?.players ? group?.players.map(player => player.pid) : group
 									//let roon_group = (e.outputs.map(output => get_pid(output.display_name)))
@@ -463,15 +463,15 @@ await get_heos_groups()
 						for  (const e of data.zones_changed){
 								//console.log("ZONE OUTPUTS CHANGED",e.display_name)
 							//console.log("ZONE CHANGED",e.display_name,JSON.stringify(e.outputs.map(output => output.output_id)))
-							console.log("ZONE OUTPUTS CHANGED",e.display_name)
+							//console.log("ZONE OUTPUTS CHANGED",e.display_name)
 							await get_heos_groups()
-							console.log(e.outputs[0].display_name,get_pid(e.outputs[0].display_name),rheos_groups )
+							//console.log(e.outputs[0].display_name,get_pid(e.outputs[0].display_name),rheos_groups )
 							let group = (rheos_groups.get(get_pid(e.outputs[0].display_name)))
-							console.log("GROUP",group)
+							//console.log("GROUP",group)
 							let roon_group = (e.outputs.map(output => get_pid(output.display_name)))
 							let heos_group = group?.players ? group?.players.map(player => player.pid) : group
 							if(roon_group.length > 1 && (sum_array(roon_group) !==sum_array(heos_group))){
-						    console.log("NEW GROUP NEEDED",JSON.stringify (roon_group),JSON.stringify(heos_group))
+						   // console.log("NEW GROUP NEEDED",JSON.stringify (roon_group),JSON.stringify(heos_group))
 							//	if (e.outputs.length >1) {
 							//		let group = (rheos_groups.get(get_pid(e.outputs[0].display_name)))
 							//			let heos_group = group?.players ? group?.players.map(player => player.pid) : group
@@ -509,7 +509,7 @@ async function heos_command(commandGroup, command, attributes = {}, timer = 5000
 					rheos_connection[0].once({ commandGroup: commandGroup, command: command, attributes }, (res) => {
 						if (res.heos.result === "success") {
 							clearTimeout(t)		
-							console.log(res.heos.message.parsed.pid == attributes.pid.toString() )
+							//console.log(res.heos.message.parsed.pid == attributes.pid.toString() )
 							resolve(res)	
 						} else {
 							clearTimeout(t)	
