@@ -288,7 +288,7 @@ function connect_roon() {
 	const roon = new RoonApi({
 		extension_id: "com.Linvale115.test",
 		display_name: "RHeos",
-		display_version: "0.3.2-3",
+		display_version: "0.3.2-4",
 		publisher: "RHEOS",
 		email: "Linvale115@gmail.com",
 		website: "https:/github.com/LINVALE/RHEOS",
@@ -624,8 +624,8 @@ function choose_binary() {
 async function set_permissions() {
 	if (os.platform == 'linux') {
 		await fs.chmod("./UPnP/Bin/squeeze2upnp-armv5te-static",0o755).catch("ERROR CHANGING FILE PERMISSION")
-		await fs.chmod("./UPnP/Bin/squeeze2upnp-aarch64-static squeeze2upnp-aarch64", 0o755).catch(console.error("ERROR CHANGING FILE PERMISSIONS"))
-		await fs.chmod("./UPnP/Bin/squeeze2upnp-x86-64-static squeeze2upnp-x86-64",0o755).catch("ERROR CHANGING FILE PERMISSION")
+		await fs.chmod("./UPnP/Bin/squeeze2upnp-aarch64-static", 0o755).catch(console.error("ERROR CHANGING FILE PERMISSIONS"))
+		await fs.chmod("./UPnP/Bin/squeeze2upnp-x86-64-static",0o755).catch("ERROR CHANGING FILE PERMISSION")
 	}
 }
 async function group_enqueue(group) {
