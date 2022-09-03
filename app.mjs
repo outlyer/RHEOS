@@ -288,7 +288,7 @@ function connect_roon() {
 	const roon = new RoonApi({
 		extension_id: "com.Linvale115.test",
 		display_name: "RHeos",
-		display_version: "0.3.2-1",
+		display_version: "0.3.2-2",
 		publisher: "RHEOS",
 		email: "Linvale115@gmail.com",
 		website: "https:/github.com/LINVALE/RHEOS",
@@ -303,7 +303,7 @@ function connect_roon() {
 						const player = [...rheos_players.values()].find(x => x.name == op.display_name)
 						if (player) {
 							player.output = op
-							player.zone = op.zone_idnpm publish
+							player.zone = op.zone_id
 						}
 					})
 				}
