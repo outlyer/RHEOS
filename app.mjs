@@ -288,7 +288,7 @@ function connect_roon() {
 	const roon = new RoonApi({
 		extension_id: "com.Linvale115.test",
 		display_name: "RHeos",
-		display_version: "0.3.2-2",
+		display_version: "0.3.2-3",
 		publisher: "RHEOS",
 		email: "Linvale115@gmail.com",
 		website: "https:/github.com/LINVALE/RHEOS",
