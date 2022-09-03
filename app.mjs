@@ -303,7 +303,7 @@ function connect_roon() {
 						const player = [...rheos_players.values()].find(x => x.name == op.display_name)
 						if (player) {
 							player.output = op
-							player.zone = op.zone_id
+							player.zone = op.zone_idnpm publish
 						}
 					})
 				}
