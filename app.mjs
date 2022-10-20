@@ -202,13 +202,14 @@ async function create_players() {
 			rheos.processes.main.kill(2)
 		}
 	} else {
-		if (!rheos.processes.main || rheos.processes.main.killed) {
+		//if (!rheos.processes.main || rheos.processes.main.killed) {
 			(fs.truncate('./UPnP/common.log', 0).catch(() => { }))
-		}
-		rheos.processes.main = spawn(choose_binary(), ['-b', ip.address(), '-Z', '-M', 'RHEOS', '-f', './UPnP/common.log', '-x', './UPnP/Profiles/config.xml'], { stdio: 'ignore' });
+		//}
+		roon.logging ? rheos.processes.main = spawn(choose_binary(), ['-b', ip.address(), '-Z', '-M', 'RHEOS', '-f', './UPnP/common.log', '-x', './UPnP/Profiles/config.xml'], { stdio: 'ignore' })
+		: rheos.processes.main = spawn(choose_binary(), ['-b', ip.address(), '-Z', '-M', 'RHEOS', '-x', './UPnP/Profiles/config.xml'], { stdio: 'ignore' });
 	}
 	for (let player of rheos_players.values()) {
-		if (rheos.mode) {
+		if (rheos.mode && player.name) {
 			if (!rheos.processes[player.pid] || rheos.processes[player.pid].killed) {
 				await (fs.truncate('./UPnP/Profiles/' + player.name.replace(/\s/g, "") + '.log', 0).catch(() => { }))
 				rheos.processes[player.pid] = spawn(choose_binary(), ['-b', ip.address(), '-Z', '-M', 'RHEOS: select Enable and then ' + '\r\n' + 'Edit "' + player.name + '" and Save Extension Settings ',
