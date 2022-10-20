@@ -1,4 +1,4 @@
-"use-strict";
+"use-strict"
 import HeosApi from "heos-api"
 import RoonApi from "node-roon-api"
 import RoonApiSettings from "node-roon-api-settings"
@@ -608,20 +608,20 @@ function sum_array(array) {
 	return total
 }
 function choose_binary() {
-	if (os.platform == 'linux') {
-		if (os.arch === 'arm'){	return ('./UPnP/Bin/squeeze2upnp-armv5te-static')}
-		else if (os.arch === 'arm64'){ return('./UPnP/Bin/squeeze2upnp-aarch64-static)')}
-		else if (os.arch === 'x64'){ return('./UPnP/Bin/squeeze2upnp-x86-64-static)')}
+	if (os.platform() == 'linux') {
+		if (os.arch() === 'arm'){	return ('./UPnP/Bin/squeeze2upnp-armv5te-static')}
+		else if (os.arch() === 'arm64'){ return('./UPnP/Bin/squeeze2upnp-aarch64-static')}
+		else if (os.arch() === 'x64'){ return('./UPnP/Bin/squeeze2upnp-x86-64-static')}
 	}
-	 else if (os.platform == 'win32') {
+	 else if (os.platform() == 'win32') {
 		return ('./UPnP/Bin/squeeze2upnp-win.exe')
 	}
 }
 async function set_permissions() {
-	if (os.platform == 'linux') {
-		//await fs.chmod("./UPnP/Bin/squeeze2upnp-armv5te-static",755).catch(console.error("ERROR CHANGING FILE PERMISSION 1"))
-		//await fs.chmod("./UPnP/Bin/squeeze2upnp-aarch64-static", 755).catch(console.error("ERROR CHANGING FILE PERMISSION 2"))
-		//await fs.chmod("./UPnP/Bin/squeeze2upnp-x86-64-static",755).catch(console.error("ERROR CHANGING FILE PERMISSION 3"))
+	if (os.platform() == 'linux') {
+		await fs.chmod("./UPnP/Bin/squeeze2upnp-armv5te-static",755).catch(console.error("ERROR CHANGING FILE PERMISSION 1"))
+		await fs.chmod("./UPnP/Bin/squeeze2upnp-aarch64-static", 755).catch(console.error("ERROR CHANGING FILE PERMISSION 2"))
+		await fs.chmod("./UPnP/Bin/squeeze2upnp-x86-64-static",755).catch(console.error("ERROR CHANGING FILE PERMISSION 3"))
 	}
 }
 async function group_enqueue(group) {
