@@ -26,7 +26,6 @@ const rheos_groups = new Map()
 const builder = new xml2js.Builder({ async: true })
 await start_roon().catch(err => console.error(err))
 await start_up().catch(err => console.error(err))
-await set_permissions().catch(err => console.error(err))
 await discover_devices().catch(err => console.error(err))
 await build_devices().catch(err => console.error(err))
 await create_players().catch(err => console.error(err))
@@ -202,9 +201,7 @@ async function create_players() {
 			rheos.processes.main.kill(2)
 		}
 	} else {
-		//if (!rheos.processes.main || rheos.processes.main.killed) {
-			(fs.truncate('./UPnP/common.log', 0).catch(() => { }))
-		//}
+		fs.truncate('./UPnP/common.log', 0).catch(() => { })
 		roon.logging ? rheos.processes.main = spawn(choose_binary(), ['-b', ip.address(), '-Z', '-M', 'RHEOS', '-f', './UPnP/common.log', '-x', './UPnP/Profiles/config.xml'], { stdio: 'ignore' })
 		: rheos.processes.main = spawn(choose_binary(), ['-b', ip.address(), '-Z', '-M', 'RHEOS', '-x', './UPnP/Profiles/config.xml'], { stdio: 'ignore' });
 	}
@@ -278,7 +275,7 @@ function connect_roon() {
 	const roon = new RoonApi({
 		extension_id: "com.Linvale115.test",
 		display_name: "RHeos",
-		display_version: "0.3.2-2",
+		display_version: "0.3.3-0",
 		publisher: "RHEOS",
 		email: "Linvale115@gmail.com",
 		website: "https:/github.com/LINVALE/RHEOS",
@@ -617,13 +614,7 @@ function choose_binary() {
 		return ('./UPnP/Bin/squeeze2upnp-win.exe')
 	}
 }
-async function set_permissions() {
-	if (os.platform() == 'linux') {
-		await fs.chmod("./UPnP/Bin/squeeze2upnp-armv5te-static",755).catch(console.error("ERROR CHANGING FILE PERMISSION 1"))
-		await fs.chmod("./UPnP/Bin/squeeze2upnp-aarch64-static", 755).catch(console.error("ERROR CHANGING FILE PERMISSION 2"))
-		await fs.chmod("./UPnP/Bin/squeeze2upnp-x86-64-static",755).catch(console.error("ERROR CHANGING FILE PERMISSION 3"))
-	}
-}
+
 async function group_enqueue(group) {
 	return new Promise(async (resolve, reject) => {
 		if (queue_array.find(awaited => sum_array(awaited.group) === sum_array(group))) {
