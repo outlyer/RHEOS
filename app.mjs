@@ -7,11 +7,11 @@ import RoonApiVolumeControl from "node-roon-api-volume-control"
 import RoonApiSourceControl from "node-roon-api-source-control"
 import RoonApiTransport from "node-roon-api-transport"
 import child from "node:child_process"
-import util, { isArray } from "node:util"
 import fs from "node:fs/promises"
 import os from "node:os"
-import xml2js, { parseStringPromise } from "xml2js"
 import ip from "ip"
+import xml2js, { parseStringPromise } from "xml2js"
+import util, { isArray } from "node:util"
 let roon, svc_status, my_settings, svc_source_control, svc_transport, svc_volume_control, rheos_connection
 const system_info = [ip.address(), os.type(), os.hostname(), os.platform(), os.arch()]
 console.log(system_info.toString())
@@ -37,17 +37,7 @@ console.table([...rheos_players.values()], ["name", "pid", "model", "ip", "resol
 async function monitor() {
 	setInterval(async () => {
 		heos_command("system", "heart_beat", {}).catch(err => console.error("HEARTBEAT MISSED", err))
-		svc_transport.get_outputs((err, ops) => {
-			if (err || !ops) { return }
-			for (const op of ops?.outputs) {
-				let player = get_player(op.display_name)
-				if (player) {
-					player.output = op
-					player.zone = op.zone_id
-				}
-			}
-			update_status()
-		})
+		update_status()
 	}, 5000)
 	return
 }
@@ -207,7 +197,6 @@ async function get_players() {
 	})
 }
 async function create_players() {
-
 	if (rheos.mode) {
 		if (rheos.processes.main && !rheos.processes.main.killed) {
 			rheos.processes.main.kill(2)
@@ -288,7 +277,7 @@ function connect_roon() {
 	const roon = new RoonApi({
 		extension_id: "com.Linvale115.test",
 		display_name: "RHeos",
-		display_version: "0.3.2-1",
+		display_version: "0.3.2-2",
 		publisher: "RHEOS",
 		email: "Linvale115@gmail.com",
 		website: "https:/github.com/LINVALE/RHEOS",
@@ -414,17 +403,23 @@ function connect_roon() {
 
 	return (roon)
 }
-async function heos_command(commandGroup, command, attributes = {}, timer = 5000) {
-	if (!rheos_connection) {return}
+async function heos_command(commandGroup, command, attributes = {}, timer = 10000) {
+	if (!rheos_connection) {
+		console.log("NO CONNECTION")
+		return
+	}
 	typeof attributes === "object" || ((timer = attributes), (attributes = {}))
 	return new Promise(function (resolve, reject) {
-		let t = setTimeout(() => { return reject(`Heos command timed out ${command, attributes}`) }, timer)
+		let t = setTimeout(() => {reject(`Heos command timed out ${command, attributes, timer}`) }, timer)
 		commandGroup !== "event" && rheos_connection[0].write(commandGroup, command, attributes)
+		
 		rheos_connection[0].once({ commandGroup: commandGroup, command: command, attributes }, (res) => {
 			res.parsed = res.heos.message.parsed
 			res.result = res.heos.result
 			if (res.heos.result === "success") {
 				if (res.heos.message.unparsed.includes("under process")) {
+					clearTimeout(t)
+					t = setTimeout(() => {resolve(res) }, timer)
 					rheos_connection[0].once({ commandGroup: commandGroup, command: command, attributes }, (res) => {
 						if (res.heos.result === "success") {
 							clearTimeout(t)
@@ -522,7 +517,7 @@ async function build_devices() {
 }
 async function start_listening() {
 	update_status()
-	heos_command("system", "prettify_json_response", { enable: "on" }).catch(err => console.error("ERR 5", err))
+	await heos_command("system", "prettify_json_response", { enable: "on" }).catch(err => console.error("ERR 5", err))
 }
 function update_status() {
 	let RheosStatus = '\n' + "RHEOS BRIDGE RUNNING : On " + system_info[2] + ' at ' + system_info[0] + '  for ' + get_elapsed_time(start_time) + '\n'
@@ -648,13 +643,14 @@ async function group_dequeue() {
 		group = group?.players?.length ? group.players?.map(player => player.pid) : []
 		if (sum_array(group) !== sum_array(item.group)) {
 			if (item.group.length == 1) { item.group = item.group[0] }
-			await heos_command("group", "set_group", { pid: item.group.toString() }).catch((err) => { item.reject(err); rheos.working = false; group_dequeue() })
+			await heos_command("group", "set_group", { pid: item.group.toString() }).catch((err) => {item.reject(err); rheos.working = false; group_dequeue() })
 			rheos.working = false
 		}
 		item.resolve()
 		group_dequeue()
 	}
 	catch (err) {
+		console.log("DEQUE ERROR CAUGHT")
 		rheos.working = false
 		item.reject(err)
 		queue_array.shift()
