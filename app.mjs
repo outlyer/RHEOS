@@ -619,9 +619,9 @@ function choose_binary() {
 }
 async function set_permissions() {
 	if (os.platform == 'linux') {
-		await fs.chmod("./UPnP/Bin/squeeze2upnp-armv5te-static",755).catch(console.error("ERROR CHANGING FILE PERMISSION 1"))
-		await fs.chmod("./UPnP/Bin/squeeze2upnp-aarch64-static", 755).catch(console.error("ERROR CHANGING FILE PERMISSION 2"))
-		await fs.chmod("./UPnP/Bin/squeeze2upnp-x86-64-static",755).catch(console.error("ERROR CHANGING FILE PERMISSION 3"))
+		//await fs.chmod("./UPnP/Bin/squeeze2upnp-armv5te-static",755).catch(console.error("ERROR CHANGING FILE PERMISSION 1"))
+		//await fs.chmod("./UPnP/Bin/squeeze2upnp-aarch64-static", 755).catch(console.error("ERROR CHANGING FILE PERMISSION 2"))
+		//await fs.chmod("./UPnP/Bin/squeeze2upnp-x86-64-static",755).catch(console.error("ERROR CHANGING FILE PERMISSION 3"))
 	}
 }
 async function group_enqueue(group) {
