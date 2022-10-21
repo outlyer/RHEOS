@@ -42,7 +42,7 @@ async function monitor() {
 }
 async function add_listeners() {
 	if (!rheos_connection) {return}
-	rheos_connection[0].write("system", "register_for_change_events", { enable: "on" })
+	rheos_connection[1].write("system", "register_for_change_events", { enable: "on" })
 	rheos_connection[1]
 		.on({ commandGroup: "system", command: "heart_beat" }, async (res) => {
 			res?.heos?.result == "success" || console.error("HEARTBEAT failed", res)
@@ -109,9 +109,12 @@ async function add_listeners() {
 		})
 		.on({ commandGroup: "event", command: "player_playback_error" }, async (res) => {
 			console.error("PLAYBACK ERROR", res.heos.message.parsed.error)
+			if ( res.heos.message.parsed.error.includes("unable to play media")){
+				console.log(res)
+				svc_transport.control(player.zone, 'play')
+			}
 		})
 		.on({ commandGroup: "event", command: "player_volume_changed" }, async (res) => {
-			
 			const { heos: { message: { parsed: { mute, level, pid } } } } = res, player = rheos_players.get(pid)
 			if (player?.volume?.mute && (mute != player.volume.mute)) {
 				player.volume.mute = mute
@@ -275,7 +278,7 @@ function connect_roon() {
 	const roon = new RoonApi({
 		extension_id: "com.Linvale115.test",
 		display_name: "RHeos",
-		display_version: "0.3.3-0",
+		display_version: "0.3.3-1",
 		publisher: "RHEOS",
 		email: "Linvale115@gmail.com",
 		website: "https:/github.com/LINVALE/RHEOS",
@@ -290,6 +293,7 @@ function connect_roon() {
 						const player = [...rheos_players.values()].find(x => x.name == op.display_name)
 						if (player) {
 							player.output = op
+							player.volume = { level: op?.volume?.value, mute: op?.volume?.is_muted ? "on" : "off" }
 							player.zone = op.zone_id
 						}
 					})
@@ -319,6 +323,11 @@ function connect_roon() {
 						if (player) {
 							player.output = op
 							player.zone = op.zone_id
+							if (player?.name && op?.volume) {
+									player.volume = { level: op?.volume?.value, mute: op?.volume?.is_muted ? "on" : "off" }
+										await heos_command("player", "set_mute", { pid: player.pid, state: op?.volume?.is_muted ? "on" : "off" }).catch(err => console.error(err))
+										await heos_command("player", "set_volume", { pid: player.pid, level: op.volume.value }).catch(err => console.error(err))
+							}
 						}
 					}
 				}
@@ -609,6 +618,7 @@ function choose_binary() {
 		if (os.arch() === 'arm'){	return ('./UPnP/Bin/squeeze2upnp-armv5te-static')}
 		else if (os.arch() === 'arm64'){ return('./UPnP/Bin/squeeze2upnp-aarch64-static')}
 		else if (os.arch() === 'x64'){ return('./UPnP/Bin/squeeze2upnp-x86-64-static')}
+		else if (os.arch() === 'ia32'){ return('./UPnP/Bin/squeeze2upnp-x86-static')}
 	}
 	 else if (os.platform() == 'win32') {
 		return ('./UPnP/Bin/squeeze2upnp-win.exe')
@@ -680,4 +690,4 @@ function play_state_changed(old_state,new_state){
 	const test = ['stopped','paused'];
 	return (test.indexOf(old_state)<0)===(test.indexOf(new_state)<0)
 }
-/** "UNTESTED STATIC FILES - to be implented"; squeeze2upnp-x86-64-static ;squeeze2upnp-x86-static ;squeeze2upnp-aarch64-static;squeeze2upnp-armv6hf-static;squeeze2upnp-ppc-static;squeeze2upnp-sparc-static;*/
+/** "UNTESTED STATIC FILES - to be implented";  squeeze2upnp-armv6hf-static;squeeze2upnp-ppc-static;squeeze2upnp-sparc-static;*/
