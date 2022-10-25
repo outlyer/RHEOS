@@ -32,7 +32,8 @@ await create_players().catch(err => console.error(err))
 await add_listeners().catch(err => console.error(err))
 await start_listening().catch(err => console.error(err))
 await update_heos_groups().catch(err => console.error(err))
-console.table([...rheos_players.values()], ["name", "pid", "model", "ip", "resolution"])
+
+
 async function monitor() {
 	setInterval(async () => {
 		heos_command("system", "heart_beat", {}).catch(err => console.error("HEARTBEAT MISSED", err))
@@ -50,7 +51,6 @@ async function add_listeners() {
 		.onClose(async (hadError) => {
 			console.error("Listeners closed", hadError)
 			await start_up().catch(err => { console.log(err) })
-			await set_permissions().catch(err => { console.log(err) })
 			await discover_devices().catch(err => { console.log(err) })
 			await build_devices().catch(err => console.error(err))
 			await create_players().catch(err => console.error(err))
@@ -156,12 +156,14 @@ async function create_root_xml() {
 		execFileSync(choose_binary(), ['-i', './UPnP/Profiles/config.xml', '-b', ip.address()], () => { resolve() });
 	})
 }
-async function start_up() {
-	const heos = [HeosApi.discoverAndConnect({timeout:5000,port:1255, address:ip.address()}),HeosApi.discoverAndConnect({timeout:5000,port:1256, address:ip.address()})]
+async function start_up(counter = 0) {
+	const heos = [HeosApi.discoverAndConnect({timeout:10000,port:1255, address:ip.address()}),HeosApi.discoverAndConnect({timeout:10000,port:1256, address:ip.address()})]
+	
 	try {
 		rheos_connection = await Promise.all(heos).catch(()=>{console.error("Heos Connection failed")})
 		rheos_connection[0].socket.setMaxListeners(0)
 		let players = await get_players()
+		if (players){
 		for (let player of players) {
 			player.resolution = my_settings[player.name]
 			rheos_players.set(player.pid, player)
@@ -172,9 +174,15 @@ async function start_up() {
 				let fb = b.network == "wired" ? 0 : 1
 				return fa - fb
 			})
+		console.table([...rheos_players.values()], ["name", "pid", "model", "ip", "resolution"])
+		} else {
+		    throw error
+		}
+
 	}
 	catch (err) {
-		throw "Unable to discover any Heos Players"
+		console.log("SEARCHING FOR HEOS PLAYERS")
+		setTimeout(() => {start_up(++counter)}, 5000)
 	}
 	return ([...rheos_players.values()] || [])
 }
@@ -182,12 +190,14 @@ async function get_players() {
 	if (!rheos_connection) {return}
 	return new Promise(function (resolve, reject) {
 		rheos_connection[0].write("player", "get_players", {})
+		rheos_connection[0]
 			.once({ commandGroup: 'player', command: 'get_players' }, (players) => {
 				if (players?.payload?.length) {
 					resolve(players?.payload)
 				} else if (players.heos.result == "fail") {
 					reject(players)
 				} else if (players.heos.message.unparsed == "command under process") {
+					console.log("SEARCHING FOR HEOS PLAYERS")
 					rheos_connection[0].once({ commandGroup: 'player', command: 'get_players' },
 						(res) => {
 							resolve(res.payload)
@@ -276,11 +286,11 @@ async function start_roon() {
 function connect_roon() {
 	let timer = setInterval(() => console.warn(" ⚠ Please ensure RHEOS is enabled in Settings -> Extensions"), 10000)
 	const roon = new RoonApi({
-		extension_id: "com.Linvale115.test",
+		extension_id: "com.RHeos.beta",
 		display_name: "RHeos",
 		display_version: "0.3.3-1",
 		publisher: "RHEOS",
-		email: "Linvale115@gmail.com",
+		email: "rheos.control@gmail.com",
 		website: "https:/github.com/LINVALE/RHEOS",
 		log_level: "none",
 		core_paired: async function (core) {
@@ -426,7 +436,7 @@ async function heos_command(commandGroup, command, attributes = {}, timer = 1000
 			if (res.heos.result === "success") {
 				if (res.heos.message.unparsed.includes("under process")) {
 					clearTimeout(t)
-					t = setTimeout(() => {resolve(res) }, timer)
+					let t = setTimeout(() => {reject(`Heos command timed out ${command, attributes, timer}`) }, timer)
 					rheos_connection[0].once({ commandGroup: commandGroup, command: command, attributes }, (res) => {
 						if (res.heos.result === "success") {
 							clearTimeout(t)
