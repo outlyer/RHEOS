@@ -33,7 +33,6 @@ await add_listeners().catch(err => console.error(err))
 await start_listening().catch(err => console.error(err))
 await update_heos_groups().catch(err => console.error(err))
 
-
 async function monitor() {
 	setInterval(async () => {
 		heos_command("system", "heart_beat", {}).catch(err => console.error("HEARTBEAT MISSED", err))
@@ -44,7 +43,6 @@ async function monitor() {
 async function add_listeners() {
 	if (!rheos_connection) {return}
 	rheos_connection[1].write("system", "register_for_change_events", { enable: "on" })
-	rheos_connection[1]
 		.on({ commandGroup: "system", command: "heart_beat" }, async (res) => {
 			res?.heos?.result == "success" || console.error("HEARTBEAT failed", res)
 		})
@@ -158,7 +156,6 @@ async function create_root_xml() {
 }
 async function start_up(counter = 0) {
 	const heos = [HeosApi.discoverAndConnect({timeout:10000,port:1255, address:ip.address()}),HeosApi.discoverAndConnect({timeout:10000,port:1256, address:ip.address()})]
-	
 	try {
 		rheos_connection = await Promise.all(heos).catch(()=>{console.error("Heos Connection failed")})
 		rheos_connection[0].socket.setMaxListeners(0)
@@ -178,7 +175,6 @@ async function start_up(counter = 0) {
 		} else {
 		    throw error
 		}
-
 	}
 	catch (err) {
 		console.log("SEARCHING FOR HEOS PLAYERS")
@@ -190,7 +186,6 @@ async function get_players() {
 	if (!rheos_connection) {return}
 	return new Promise(function (resolve, reject) {
 		rheos_connection[0].write("player", "get_players", {})
-		rheos_connection[0]
 			.once({ commandGroup: 'player', command: 'get_players' }, (players) => {
 				if (players?.payload?.length) {
 					resolve(players?.payload)
@@ -288,7 +283,7 @@ function connect_roon() {
 	const roon = new RoonApi({
 		extension_id: "com.RHeos.beta",
 		display_name: "RHeos",
-		display_version: "0.3.3-2",
+		display_version: "0.3.3-3",
 		publisher: "RHEOS",
 		email: "rheos.control@gmail.com",
 		website: "https:/github.com/LINVALE/RHEOS",
@@ -365,13 +360,6 @@ function connect_roon() {
 					return roon
 				}
 				if (cmd === "Changed") {
-					if (data.zones_seek_changed) {
-						for (const z of data.zones_seek_changed) {
-							if (z.seek_position === null) {
-								await create_players()
-							}
-						}
-					}
 					if (data.zones_removed) {
 						for (const e of data.zones_removed) {
 							await update_heos_groups()
@@ -417,52 +405,34 @@ function connect_roon() {
 			core = undefined
 		}
 	})
-
 	return (roon)
 }
-async function heos_command(commandGroup, command, attributes = {}, timer = 10000) {
+async function heos_command(commandGroup, command, attributes = {}, timer = 5000) {
 	if (!rheos_connection) {
-		console.log("NO CONNECTION")
+		console.error("NO CONNECTION")
 		return
 	}
 	typeof attributes === "object" || ((timer = attributes), (attributes = {}))
 	return new Promise(function (resolve, reject) {
-		let t = setTimeout(() => {reject(`Heos command timed out ${command, attributes, timer}`) }, timer)
+		setTimeout(() => {reject(`Heos command timed out: ${command} ${timer}`) }, timer)
 		commandGroup !== "event" && rheos_connection[0].write(commandGroup, command, attributes)
-		
 		rheos_connection[0].once({ commandGroup: commandGroup, command: command, attributes }, (res) => {
 			res.parsed = res.heos.message.parsed
 			res.result = res.heos.result
-			if (res.heos.result === "success") {
-				if (res.heos.message.unparsed.includes("under process")) {
-					clearTimeout(t)
-					let t = setTimeout(() => {reject(`Heos command timed out ${command, attributes, timer}`) }, timer)
-					rheos_connection[0].once({ commandGroup: commandGroup, command: command, attributes }, (res) => {
-						if (res.heos.result === "success") {
-							clearTimeout(t)
-							resolve(res)
-						} else {
-							clearTimeout(t)
-							reject(res)
-						}
-					})
-				} else {
-					clearTimeout(t)
-					resolve(res)
-				}
-			} else {
-				if (res.heos.message.unparsed.includes("not executed")) {
-					clearTimeout(t)
-					resolve(res)
-				}
-				clearTimeout(t)
+			if (res.heos.message.unparsed.includes("under process")) {
+				rheos_connection[0].once({ commandGroup: commandGroup, command: command, attributes }, (res) => {
 				resolve(res)
-			}
+			})} 
+			else if (res.heos.result === "success") {
+				resolve(res)}
+			else {
+				reject(res)	
+			}		
 		})
-	})
+	}).catch((err)=> console.error("ERROR",err))
 }
 async function build_devices() {
-	return new Promise(async function (resolve,reject) {
+	return new Promise(async function (resolve) {
 		let template, xml_template = {}
 		template = {
 			"squeeze2upnp": {
@@ -661,14 +631,13 @@ async function group_dequeue() {
 			rheos.working = false
 		}
 		item.resolve()
-		group_dequeue()
+		group_dequeue().catch(err => console.log(err))
 	}
 	catch (err) {
-		console.log("DEQUE ERROR CAUGHT")
 		rheos.working = false
 		item.reject(err)
 		queue_array.shift()
-		group_dequeue()
+		group_dequeue().catch(err => console.log(err))
 	}
 }
 async function update_heos_groups() {
@@ -681,7 +650,7 @@ async function update_heos_groups() {
 			}
 		}
 		resolve(res)
-	})
+	}).catch(err => console.log(err))
 }
 function get_elapsed_time(start_time) {
 	const end_time = new Date();
