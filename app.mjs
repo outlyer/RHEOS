@@ -159,12 +159,12 @@ async function start_up(counter = 0) {
 	try {
 		rheos_connection = await Promise.all(heos).catch(()=>{console.error("Heos Connection failed")})
 		rheos_connection[0].socket.setMaxListeners(0)
-		const players = await get_players()
-		const old_p = sum_array(my_players.map(x => x.pid))
-		const new_p = sum_array(players.map(x => x.pid))
+		let players = await get_players()
+		let old_p = sum_array(my_players.map(x => x.pid))
+		let new_p = sum_array(players.map(x => x.pid))
 		my_players.players = players
-		console.log(new_p && old_p === new_p)
-		if (new_p && old_p === new_p){
+		roon.save_config("players",players)	
+		if (new_p && (old_p === new_p)){
 		for (let player of players) {
 			player.resolution = my_settings[player.name]
 			rheos_players.set(player.pid, player)
@@ -175,9 +175,10 @@ async function start_up(counter = 0) {
 				let fb = b.network == "wired" ? 0 : 1
 				return fa - fb
 			})
-		roon.save_config("players",players)	
+		
 		console.table([...rheos_players.values()], ["name", "pid", "model", "ip", "resolution"])
 		} else {
+			console.error("ERROR IN STARTUP")
 		    throw error
 		}
 	}
