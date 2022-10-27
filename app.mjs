@@ -25,6 +25,7 @@ const rheos_players = new Map()
 const rheos_zones = new Map()
 const rheos_groups = new Map()
 const builder = new xml2js.Builder({ async: true })
+clean_up()
 await start_roon().catch(err => console.error(err))
 await start_up().catch(err => console.error(err))
 await discover_devices().catch(err => console.error(err))
@@ -176,7 +177,6 @@ async function start_up(counter = 0) {
 				let fb = b.network == "wired" ? 0 : 1
 				return fa - fb
 			})
-		
 		console.table([...rheos_players.values()], ["name", "pid", "model", "ip", "resolution"])
 		} else {
 			console.error("ERROR IN STARTUP")
@@ -210,7 +210,6 @@ async function get_players() {
 	})
 }
 async function create_players() {
-
 	if (rheos.mode) {
 		if (rheos.processes.main && !rheos.processes.main.killed) {
 			console.log('killing',rheos.processes.main.pid)
@@ -238,7 +237,6 @@ async function create_players() {
 			}
 		}
 	}
-	//console.log(rheos.processes.main,rheos.processes.main?.pid)
 }
 async function start_roon() {
 	roon = connect_roon()
@@ -684,5 +682,19 @@ function get_elapsed_time(start_time) {
 function play_state_changed(old_state,new_state){
 	const test = ['stopped','paused'];
 	return (test.indexOf(old_state)<0)===(test.indexOf(new_state)<0)
+}
+function clean_up(){	
+	process.on('SIGINT',() => {
+		console.log("SHUTTING DOWN")
+		if (rheos.processes.main && !rheos.processes.main.killed) {
+			process.kill(rheos.processes.main.pid)
+		}
+		for (let player of rheos_players.values()) {
+			if (rheos.processes[player.pid] && !rheos.processes[player.pid].killed) { 
+				process.kill(Number(rheos.processes[player.pid].pid))
+			}
+		}
+		process.exit()
+	})
 }
 /** "UNTESTED STATIC FILES - to be implented";  squeeze2upnp-armv6hf-static;squeeze2upnp-ppc-static;squeeze2upnp-sparc-static;*/
