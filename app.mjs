@@ -12,7 +12,7 @@ import os from "node:os"
 import ip from "ip"
 import xml2js, { parseStringPromise } from "xml2js"
 import util, { isArray } from "node:util"
-let roon, svc_status, my_settings, svc_source_control, svc_transport, svc_volume_control, rheos_connection
+let roon, svc_status, my_settings, svc_source_control, svc_transport, svc_volume_control, rheos_connection, my_players
 const system_info = [ip.address(), os.type(), os.hostname(), os.platform(), os.arch()]
 console.log(system_info.toString())
 const rheos = { processes: {}, mode: false, discovery: 0, working: false}
@@ -159,8 +159,12 @@ async function start_up(counter = 0) {
 	try {
 		rheos_connection = await Promise.all(heos).catch(()=>{console.error("Heos Connection failed")})
 		rheos_connection[0].socket.setMaxListeners(0)
-		let players = await get_players()
-		if (players){
+		const players = await get_players()
+		const old_p = sum_array(my_players.map(x => x.pid))
+		const new_p = sum_array(players.map(x => x.pid))
+		my_players.players = players
+		console.log(new_p && old_p === new_p)
+		if (new_p && old_p === new_p){
 		for (let player of players) {
 			player.resolution = my_settings[player.name]
 			rheos_players.set(player.pid, player)
@@ -171,6 +175,7 @@ async function start_up(counter = 0) {
 				let fb = b.network == "wired" ? 0 : 1
 				return fa - fb
 			})
+		roon.save_config("players",players)	
 		console.table([...rheos_players.values()], ["name", "pid", "model", "ip", "resolution"])
 		} else {
 		    throw error
@@ -180,10 +185,9 @@ async function start_up(counter = 0) {
 		console.log("SEARCHING FOR HEOS PLAYERS")
 		setTimeout(() => {start_up(++counter)}, 5000)
 	}
-	return ([...rheos_players.values()] || [])
 }
 async function get_players() {
-	if (!rheos_connection) {return}
+	if (!rheos_connection) {reject("AWAITING CONNECTION")}
 	return new Promise(function (resolve, reject) {
 		rheos_connection[0].write("player", "get_players", {})
 			.once({ commandGroup: 'player', command: 'get_players' }, (players) => {
@@ -232,6 +236,7 @@ async function start_roon() {
 	svc_volume_control = new RoonApiVolumeControl(roon)
 	svc_transport = new RoonApiTransport(roon)
 	my_settings = roon.load_config("settings") || {}
+	my_players = roon.load_config("players") || []
 	my_settings.host_ip || (my_settings.host_ip = ip.address())
 	my_settings.streambuf_size || (my_settings.streambuf_size = 524288)
 	my_settings.output_size || (my_settings.output_size = 8388608)
