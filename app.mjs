@@ -10,6 +10,7 @@ import child from "node:child_process"
 import fs from "node:fs/promises"
 import os from "node:os"
 import ip from "ip"
+import process from "node:process"
 import xml2js, { parseStringPromise } from "xml2js"
 import util, { isArray } from "node:util"
 let roon, svc_status, my_settings, svc_source_control, svc_transport, svc_volume_control, rheos_connection, my_players
@@ -209,9 +210,12 @@ async function get_players() {
 	})
 }
 async function create_players() {
+
 	if (rheos.mode) {
 		if (rheos.processes.main && !rheos.processes.main.killed) {
-			rheos.processes.main.kill(2)
+			console.log('killing',rheos.processes.main.pid)
+			process.kill(rheos.processes.main.pid)
+			delete rheos.processes.main
 		}
 	} else {
 		fs.truncate('./UPnP/common.log', 0).catch(() => { })
@@ -226,9 +230,15 @@ async function create_players() {
 					'-x', './UPnP/Profiles/' + player.name.replace(/\s/g, "") + '.xml', '-f', './UPnP/Profiles/' + player.name.replace(/\s/g, "") + '.log'], { stdio: 'ignore' })
 			}
 		} else {
-			if (rheos.processes[player.pid] && !rheos.processes[player.pid].killed) { rheos.processes[player.pid].kill(2) }
+			if (rheos.processes[player.pid] && !rheos.processes[player.pid].killed) { 
+				console.log('killing',rheos.processes[player.pid].pid)
+				process.kill(Number(rheos.processes[player.pid].pid))
+				delete rheos.processes[player.pid]
+
+			}
 		}
 	}
+	//console.log(rheos.processes.main,rheos.processes.main?.pid)
 }
 async function start_roon() {
 	roon = connect_roon()
@@ -371,7 +381,7 @@ function connect_roon() {
 							await update_heos_groups()
 							const zone = rheos_zones.get(e)
 							const group = rheos_groups.get(get_pid(zone?.outputs[0].display_name))
-							if (zone.outputs.length > 1 && group) {
+							if (zone?.outputs.length > 1 && group) {
 								group_enqueue([get_pid(zone?.outputs[0].display_name)])
 								rheos_groups.delete(get_pid(zone?.outputs[0].display_name))
 							}
