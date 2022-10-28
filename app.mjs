@@ -618,7 +618,6 @@ function choose_binary() {
 		return ('./UPnP/Bin/squeeze2upnp-win.exe')
 	}
 }
-
 async function group_enqueue(group) {
 	return new Promise(async (resolve, reject) => {
 		if (queue_array.find(awaited => sum_array(awaited.group) === sum_array(group))) {
