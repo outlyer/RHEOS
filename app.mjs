@@ -291,11 +291,13 @@ function connect_roon() {
 			svc_transport.subscribe_outputs(async function (cmd, data) {
 				if (cmd == "Subscribed") {
 					data.outputs?.forEach((op) => {
-						const player = [...rheos_players.values()].find(x => x.name === op?.source_controls[0]?.display_name)
-						if (player) {
-							player.output = op
-							player.volume = { level: op?.volume?.value, mute: op?.volume?.is_muted ? "on" : "off" }
-							player.zone = op.zone_id
+						if (op.source_controls){
+							const player = [...rheos_players.values()].find(x => x.name === op?.source_controls[0]?.display_name)
+							if (player) {
+								player.output = op
+								player.volume = { level: op?.volume?.value, mute: op?.volume?.is_muted ? "on" : "off" }
+								player.zone = op.zone_id
+							}
 						}
 					})
 				}
