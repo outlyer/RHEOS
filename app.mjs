@@ -152,8 +152,8 @@ async function discover_devices() {
 	})
 }
 async function create_root_xml() {
-	return new Promise(function (resolve) {
-		const app = await (choose_binary())
+	const app = await (choose_binary())
+	return new Promise(function (resolve) {	
 		execFileSync(app, ['-i', './UPnP/Profiles/config.xml', '-b', ip.address()], () => { resolve() });
 	})
 }
