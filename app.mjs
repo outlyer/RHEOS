@@ -597,6 +597,7 @@ function sum_array(array) {
 }
 async function choose_binary() {
 	if (os.platform() == 'linux') {
+		fs.chmod('./UPnP/Bin/squeeze2upnp*',0o700)
 		if (os.arch() === 'arm'){return ('./UPnP/Bin/squeeze2upnp-armv5te-static')}
 		else if (os.arch() === 'arm64'){ return('./UPnP/Bin/squeeze2upnp-aarch64-static')}
 		else if (os.arch() === 'x64'){ return('./UPnP/Bin/squeeze2upnp-x86-64-static')}
