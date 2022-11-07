@@ -598,7 +598,7 @@ function sum_array(array) {
 async function choose_binary() {
 	if (os.platform() == 'linux') {
 		fs.chmod('./UPnP/Bin/squeeze2upnp-armv5te-static',0o700)
-		fs.chmod('./UPnP/Bin/squeeze2upnp-aarcch64-static',0o700)
+		fs.chmod('./UPnP/Bin/squeeze2upnp-aarch64-static',0o700)
 		fs.chmod('./UPnP/Bin/squeeze2upnp-x86-64-static',0o700)
 		fs.chmod('./UPnP/Bin/squeeze2upnp-x86-static',0o700)
 		if (os.arch() === 'arm'){return ('./UPnP/Bin/squeeze2upnp-armv5te-static')}
