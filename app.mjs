@@ -50,14 +50,14 @@ async function add_listeners() {
 		})
 		.onClose(async (hadError) => {
 			console.error("Listeners closed", hadError)
-			await start_up().catch(err => { console.log(err) })
-			await discover_devices().catch(err => { console.log(err) })
+			await start_up().catch(err => { console.error(err) })
+			await discover_devices().catch(err => { console.error(err) })
 			await build_devices().catch(err => console.error(err))
 			await create_players().catch(err => console.error(err))
 			await add_listeners().catch(err => console.error(err))
 			await start_listening().catch(err => console.error(err))
 		})
-		.onError((err) => console.error("ERROR", err))
+		.onError((err) => console.error("HEOS REPORTS ERROR", err))
 		.on({ commandGroup: "event", command: "groups_changed" }, async (res) => {
 			roon.logging && console.warn("Player Groups have changed")
 			await update_heos_groups().catch(err => console.error(err))
@@ -110,7 +110,7 @@ async function add_listeners() {
 		.on({ commandGroup: "event", command: "player_playback_error" }, async (res) => {
 			console.error("PLAYBACK ERROR", res.heos.message.parsed.error)
 			if ( res.heos.message.parsed.error.includes("unable to play media")){
-				console.log(res)
+				console.error(res)
 				svc_transport.control(player.zone, 'play')
 			}
 		})
@@ -210,32 +210,13 @@ async function get_players() {
 	})
 }
 async function create_players() {
-	if (rheos.mode) {
-		if (rheos.processes.main && !rheos.processes.main.killed) {
-			console.log('killing',rheos.processes.main.pid)
-			process.kill(rheos.processes.main.pid)
-			delete rheos.processes.main
-		}
-	} else {
-		fs.truncate('./UPnP/common.log', 0).catch(() => { })
-		roon.logging ? rheos.processes.main = spawn(choose_binary(), ['-b', ip.address(), '-Z', '-M', 'RHEOS', '-f', './UPnP/common.log', '-x', './UPnP/Profiles/config.xml'], { stdio: 'ignore' })
-		: rheos.processes.main = spawn(choose_binary(), ['-b', ip.address(), '-Z', '-M', 'RHEOS', '-x', './UPnP/Profiles/config.xml'], { stdio: 'ignore' });
-	}
-	for (let player of rheos_players.values()) {
-		if (rheos.mode && player.name) {
+	for await (const player of rheos_players.values()) {
 			if (!rheos.processes[player.pid] || rheos.processes[player.pid].killed) {
 				await (fs.truncate('./UPnP/Profiles/' + player.name.replace(/\s/g, "") + '.log', 0).catch(() => { }))
-				rheos.processes[player.pid] = spawn(choose_binary(), ['-b', ip.address(), '-Z', '-M', 'RHEOS: select Enable and then ' + '\r\n' + 'Edit "' + player.name + '" and Save Extension Settings ',
-					'-x', './UPnP/Profiles/' + player.name.replace(/\s/g, "") + '.xml', '-f', './UPnP/Profiles/' + player.name.replace(/\s/g, "") + '.log'], { stdio: 'ignore' })
+				const app = await (choose_binary())
+				rheos.processes[player.pid] = spawn(app, ['-b', ip.address(), '-Z', '-M', player.name,
+					'-x', './UPnP/Profiles/' + player.name.replace(/\s/g, "") + '.xml', '-p','./UPnP/Profiles/' + player.name.replace(/\s/g, "") + '.pid','-f', './UPnP/Profiles/' + player.name.replace(/\s/g, "") + '.log'], { stdio: 'ignore' })
 			}
-		} else {
-			if (rheos.processes[player.pid] && !rheos.processes[player.pid].killed) { 
-				console.log('killing',rheos.processes[player.pid].pid)
-				process.kill(Number(rheos.processes[player.pid].pid))
-				delete rheos.processes[player.pid]
-
-			}
-		}
 	}
 }
 async function start_roon() {
@@ -297,7 +278,7 @@ function connect_roon() {
 	const roon = new RoonApi({
 		extension_id: "com.RHeos.beta",
 		display_name: "RHeos",
-		display_version: "0.3.3-5",
+		display_version: "0.3.4-0",
 		publisher: "RHEOS",
 		email: "rheos.control@gmail.com",
 		website: "https:/github.com/LINVALE/RHEOS",
@@ -309,7 +290,7 @@ function connect_roon() {
 			svc_transport.subscribe_outputs(async function (cmd, data) {
 				if (cmd == "Subscribed") {
 					data.outputs?.forEach((op) => {
-						const player = [...rheos_players.values()].find(x => x.name == op.display_name)
+						const player = [...rheos_players.values()].find(x => x.name === op?.source_controls[0]?.display_name)
 						if (player) {
 							player.output = op
 							player.volume = { level: op?.volume?.value, mute: op?.volume?.is_muted ? "on" : "off" }
@@ -319,45 +300,53 @@ function connect_roon() {
 				}
 				if (cmd == "Changed" && data.outputs_changed) {
 					for await (let op of data.outputs_changed) {
-						let player = get_player(op.display_name)
-						if (player?.name && op?.volume) {
-							if ((player.volume?.mute !== (op?.volume?.is_muted ? "on" : "off")) && op?.volume?.is_muted !== player?.output?.volume?.is_muted) {
-								player.volume = { level: op?.volume?.value, mute: op?.volume?.is_muted ? "on" : "off" }
-									await heos_command("player", "set_mute", { pid: player.pid, state: op?.volume?.is_muted ? "on" : "off" }).catch(err => console.error(err))// :
+						if (op.source_controls){
+							let player = get_player(op?.source_controls[0]?.display_name)
+							if (player?.name && op?.volume) {
+								if ((player.volume?.mute !== (op?.volume?.is_muted ? "on" : "off")) && op?.volume?.is_muted !== player?.output?.volume?.is_muted) {
+									player.volume = { level: op?.volume?.value, mute: op?.volume?.is_muted ? "on" : "off" }
+										await heos_command("player", "set_mute", { pid: player.pid, state: op?.volume?.is_muted ? "on" : "off" }).catch(err => console.error(err))// :
+								}
+								else if (player.volume?.level !== op.volume.value && op.volume.value !== player?.output?.volume?.value) {
+									player.volume = { level: op.volume.value, mute: op?.volume?.is_muted ? "on" : "off" }
+										await heos_command("player", "set_volume", { pid: player.pid, level: op.volume.value }).catch(err => console.error(err))// :
+								}
 							}
-							else if (player.volume?.level !== op.volume.value && op.volume.value !== player?.output?.volume?.value) {
-								player.volume = { level: op.volume.value, mute: op?.volume?.is_muted ? "on" : "off" }
-									await heos_command("player", "set_volume", { pid: player.pid, level: op.volume.value }).catch(err => console.error(err))// :
+							if (player) {
+								player.output = op
+								player.zone = op.zone_id
 							}
-						}
-						if (player) {
-							player.output = op
-							player.zone = op.zone_id
-						}
+						}	
 					}
 				}
 				if (cmd == "Changed" && data.outputs_added) {
 					for await (let op of data.outputs_added) {
-						const player = [...rheos_players.values()].find(player => player.name == op.display_name)
-						if (player) {
-							player.output = op
-							player.zone = op.zone_id
-							if (player?.name && op?.volume) {
-									player.volume = { level: op?.volume?.value, mute: op?.volume?.is_muted ? "on" : "off" }
-										await heos_command("player", "set_mute", { pid: player.pid, state: op?.volume?.is_muted ? "on" : "off" }).catch(err => console.error(err))
-										await heos_command("player", "set_volume", { pid: player.pid, level: op.volume.value }).catch(err => console.error(err))
+						if (op.source_controls){
+						const player = [...rheos_players.values()].find(player => player.name == op?.source_controls[0]?.display_name)
+							if (player) {
+								player.output = op
+								player.zone = op.zone_id
+								if (player?.name && op?.volume) {
+										player.volume = { level: op?.volume?.value, mute: op?.volume?.is_muted ? "on" : "off" }
+											await heos_command("player", "set_mute", { pid: player.pid, state: op?.volume?.is_muted ? "on" : "off" }).catch(err => console.error(err))
+											await heos_command("player", "set_volume", { pid: player.pid, level: op.volume.value }).catch(err => console.error(err))
+								}
 							}
 						}
+						
 					}
 				}
 				if (cmd == "Changed" && data.outputs_removed) {
 					data.outputs_removed?.forEach((op) => {
-						const player = get_player(op.display_name)
-						if (player) {
-							player.output = undefined
-							player.zone = undefined
+						if (op.source_controls){
+							const player = get_player(op.source_controls[0].display_name)
+							if (player) {
+								player.output = undefined
+								player.zone = undefined
+							}
 						}
 					})
+			
 				}
 				if (cmd == "Network Error") {
 					console.error("NETWORK ERROR", cmd)
@@ -378,10 +367,10 @@ function connect_roon() {
 						for (const e of data.zones_removed) {
 							await update_heos_groups()
 							const zone = rheos_zones.get(e)
-							const group = rheos_groups.get(get_pid(zone?.outputs[0].display_name))
+							const group = rheos_groups.get(get_pid(zone?.outputs[0].source_controls[0]?.display_name))
 							if (zone?.outputs.length > 1 && group) {
-								group_enqueue([get_pid(zone?.outputs[0].display_name)])
-								rheos_groups.delete(get_pid(zone?.outputs[0].display_name))
+								group_enqueue([get_pid(zone?.outputs[0].source_controls[0]?.display_name)])
+								rheos_groups.delete(get_pid(zone?.outputs[0].source_controls[0]?.display_name))
 							}
 							rheos_zones.delete(e)
 						}
@@ -389,8 +378,8 @@ function connect_roon() {
 					if (data.zones_added) {
 						for (const e of data.zones_added) {
 							await update_heos_groups()
-							const group = (rheos_groups.get(get_pid(e.outputs[0].display_name)))
-							const roon_group = (e.outputs.map(output => get_pid(output.display_name)))
+							const group = (rheos_groups.get(get_pid(e.outputs[0].source_controls[0]?.display_name)))
+							const roon_group = (e.outputs.map(output => get_pid(output.source_controls[0]?.display_name)))
 							const heos_group = group?.players ? group?.players.map(player => player.pid) : group
 							if (roon_group.length > 1 && (sum_array(roon_group) !== sum_array(heos_group))) {
 								group_enqueue(roon_group)
@@ -402,8 +391,8 @@ function connect_roon() {
 						for (const e of data.zones_changed) {
 							await update_heos_groups()
 							const zone = rheos_zones.get(e.zone_id)
-							const group = (rheos_groups.get(get_pid(e.outputs[0].display_name)))
-							const roon_group = (e.outputs.map(output => get_pid(output.display_name)))
+							const group = (rheos_groups.get(get_pid(e.outputs[0].source_controls[0]?.display_name)))
+							const roon_group = (e.outputs.map(output => get_pid(output.source_controls[0]?.display_name)))
 							const heos_group = group?.players ? group?.players.map(player => player.pid) : group;
 							( (e.state == 'paused' || e.state == 'stopped') ||  (play_state_changed(zone.state,e.state) && zone.now_playing.one_line.line1 === e.now_playing.one_line.line1)) || console.error(new Date().toLocaleString(), e.display_name, " ▶ ",e.now_playing?.one_line.line1)	
 							if (roon_group.length > 1 && (sum_array(roon_group) !== sum_array(heos_group))) {
@@ -443,7 +432,7 @@ async function heos_command(commandGroup, command, attributes = {}, timer = 5000
 				reject(res)	
 			}		
 		})
-	}).catch((err)=> console.error("ERROR",err))
+	}).catch((err)=> err)
 }
 async function build_devices() {
 	return new Promise(async function (resolve) {
@@ -492,7 +481,7 @@ async function build_devices() {
 						device.mode = (("flc:0,r:-48000,s:16").toString().concat(my_settings.flow ? ",flow" : ""))
 						device.sample_rate = ['48000']
 					}
-					let subtemplate = { "squeeze2upnp": { "common": [{ "enabled": ['0'] }], "device": [device] } }
+					let subtemplate = { "squeeze2upnp": { "common": template.squeeze2upnp.common, "device": [device] } }
 					xml_template = builder.buildObject(subtemplate)
 					await fs.writeFile("./UPnP/Profiles/" + (device.name[0].replace(/\s/g, "")) + ".xml", xml_template)
 				}
@@ -522,8 +511,6 @@ async function start_listening() {
 }
 function update_status() {
 	let RheosStatus = '\n' + "RHEOS BRIDGE RUNNING : On " + system_info[2] + ' at ' + system_info[0] + '  for ' + get_elapsed_time(start_time) + '\n'
-	RheosStatus = RheosStatus + "_".repeat(120) + "\n \n"
-	RheosStatus = RheosStatus + (rheos.mode ? "⚠ IN CONFIGURATION MODE - PLEASE SAVE EXTENSION SETTINGS TO ENABLE PLAY MODE" + "\n" : " 🔛 IN PLAY MODE - SELECT SETTINGS TO CONFIGURE" + "\n")
 	RheosStatus = RheosStatus + "_".repeat(120) + " \n \n " + (rheos.discovery > 0 ? ("CONNECTING HEOS DEVICES TO UPNP" + (".".repeat(rheos.discovery)))
 		: ("DISCOVERED " + rheos_players.size + " HEOS PLAYERS")) + "\n \n"
 	for (let player of rheos_players.values()) {
@@ -592,13 +579,13 @@ function makelayout(my_settings) {
 }
 function get_pid(player_name) {
 	if (rheos_players.size) {
-		let player = [...rheos_players.values()].find((player) => player?.name?.trim().toLowerCase() === player_name?.trim().toLowerCase())
+		let player = [...rheos_players.values()].find((player) => player?.name?.trim().toLowerCase().replace(/\s/g, "") === player_name?.trim().toLowerCase().replace(/\s/g, ""))
 		return player?.pid
 	}
 }
 function get_player(player_name) {
 	if (rheos_players.size) {
-		let player = [...rheos_players.values()].find((player) => player?.name?.trim().toLowerCase() === player_name?.trim().toLowerCase())
+		let player = [...rheos_players.values()].find((player) => player?.name?.trim().toLowerCase().replace(/\s/g, "") === player_name?.trim().toLowerCase().replace(/\s/g, ""))
 		return player
 	}
 }
@@ -607,17 +594,18 @@ function sum_array(array) {
 	let total = array?.reduce(function (acc, cur) { return acc + cur }, typeof (array[0]) == 'string' ? "" : 0)
 	return total
 }
-function choose_binary() {
+async function choose_binary() {
 	if (os.platform() == 'linux') {
-		if (os.arch() === 'arm'){	return ('./UPnP/Bin/squeeze2upnp-armv5te-static')}
+		if (os.arch() === 'arm'){return ('./UPnP/Bin/squeeze2upnp-armv5te-static')}
 		else if (os.arch() === 'arm64'){ return('./UPnP/Bin/squeeze2upnp-aarch64-static')}
 		else if (os.arch() === 'x64'){ return('./UPnP/Bin/squeeze2upnp-x86-64-static')}
 		else if (os.arch() === 'ia32'){ return('./UPnP/Bin/squeeze2upnp-x86-static')}
 	}
-	 else if (os.platform() == 'win32') {
-		return ('./UPnP/Bin/squeeze2upnp-win.exe')
-	}
+	else if (os.platform() == 'win32') {
+		return('./UPnP/Bin/rheos-upnp.exe')
+	} 
 }
+		
 async function group_enqueue(group) {
 	return new Promise(async (resolve, reject) => {
 		if (queue_array.find(awaited => sum_array(awaited.group) === sum_array(group))) {
@@ -627,7 +615,7 @@ async function group_enqueue(group) {
 		await group_dequeue()
 	})
 }
-async function group_dequeue() {
+async function group_dequeue(timer = 30000) {
 	if (rheos.working) { return }
 	const item = queue_array.shift()
 	if (!item) {
@@ -640,7 +628,7 @@ async function group_dequeue() {
 		group = group?.players?.length ? group.players?.map(player => player.pid) : []
 		if (sum_array(group) !== sum_array(item.group)) {
 			if (item.group.length == 1) { item.group = item.group[0] }
-			await heos_command("group", "set_group", { pid: item.group.toString() }).catch((err) => {item.reject(err); rheos.working = false; group_dequeue() })
+			await heos_command("group", "set_group", { pid: item.group.toString() },timer).catch((err) => {item.reject(err); rheos.working = false; group_dequeue() })
 			rheos.working = false
 		}
 		item.resolve()
@@ -650,20 +638,20 @@ async function group_dequeue() {
 		rheos.working = false
 		item.reject(err)
 		queue_array.shift()
-		group_dequeue().catch(err => console.log(err))
+		group_dequeue().catch(err => console.error(err))
 	}
 }
 async function update_heos_groups() {
 	return new Promise(async function (resolve) {
 		rheos_groups.clear()
-		const res = await heos_command("group", "get_groups").catch(err => console.error(err))
+		const res = await heos_command("group", "get_groups",30000).catch(err => console.error(err))
 		if (res?.payload.length) {
 			for (const group of res.payload) {
 				rheos_groups.set(group.gid, group)
 			}
 		}
 		resolve(res)
-	}).catch(err => console.log(err))
+	}).catch(err => console.error(err))
 }
 function get_elapsed_time(start_time) {
 	const end_time = new Date();
@@ -676,7 +664,7 @@ function get_elapsed_time(start_time) {
 	const hours = time_diff % 24
 	time_diff = Math.floor(time_diff / 24)
 	const days = time_diff;
-	return (days ? days + " days,  " : "") + (hours ? hours + " hr " : "") + minutes + " min " + seconds + " sec";
+	return (days ? days + (days == 1 ? " day " : "days " ) : "") + (hours ? hours + (hours == 1 ? " hr " : "hrs " ) : "") + minutes + " min " + seconds + " sec";
 }
 function play_state_changed(old_state,new_state){
 	const test = ['stopped','paused'];
