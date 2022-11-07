@@ -153,7 +153,8 @@ async function discover_devices() {
 }
 async function create_root_xml() {
 	return new Promise(function (resolve) {
-		execFileSync(choose_binary(), ['-i', './UPnP/Profiles/config.xml', '-b', ip.address()], () => { resolve() });
+		const app = await (choose_binary())
+		execFileSync(app, ['-i', './UPnP/Profiles/config.xml', '-b', ip.address()], () => { resolve() });
 	})
 }
 async function start_up(counter = 0) {
