@@ -216,7 +216,10 @@ async function create_players() {
 				await (fs.truncate('./UPnP/Profiles/' + player.name.replace(/\s/g, "") + '.log', 0).catch(() => { }))
 				const app = await (choose_binary())
 				rheos.processes[player.pid] = spawn(app, ['-b', ip.address(), '-Z', '-M', player.name,
-					'-x', './UPnP/Profiles/' + player.name.replace(/\s/g, "") + '.xml', '-p','./UPnP/Profiles/' + player.name.replace(/\s/g, "") + '.pid','-f', './UPnP/Profiles/' + player.name.replace(/\s/g, "") + '.log'], { stdio: 'ignore' })
+					'-x', './UPnP/Profiles/' + player.name.replace(/\s/g, "") + '.xml', 
+					'-p','./UPnP/Profiles/' + player.name.replace(/\s/g, "") + '.pid',
+					'-f', './UPnP/Profiles/' + player.name.replace(/\s/g, "") + '.log'],
+					 { stdio: 'ignore' })
 			}
 	}
 }
@@ -599,17 +602,22 @@ function sum_array(array) {
 }
 async function choose_binary() {
 	if (os.platform() == 'linux') {
-		fs.chmod('./UPnP/Bin/squeeze2upnp-armv5te-static',0o700)
-		fs.chmod('./UPnP/Bin/squeeze2upnp-aarch64-static',0o700)
-		fs.chmod('./UPnP/Bin/squeeze2upnp-x86-64-static',0o700)
-		fs.chmod('./UPnP/Bin/squeeze2upnp-x86-static',0o700)
-		if (os.arch() === 'arm'){return ('./UPnP/Bin/squeeze2upnp-armv5te-static')}
-		else if (os.arch() === 'arm64'){ return('./UPnP/Bin/squeeze2upnp-aarch64-static')}
-		else if (os.arch() === 'x64'){ return('./UPnP/Bin/squeeze2upnp-x86-64-static')}
-		else if (os.arch() === 'ia32'){ return('./UPnP/Bin/squeeze2upnp-x86-static')}
+		if (os.arch() === 'arm'){
+			await fs.chmod('./UPnP/Bin/RHEOS-armv5te',0o700)
+			return ('./UPnP/Bin/RHEOS-armv5te')
+		} else if (os.arch() === 'arm64'){
+			await fs.chmod('./UPnP/Bin/RHEOS-aarch64',0o700)
+			return('./UPnP/Bin/RHEOS-aarch64')
+		} else if (os.arch() === 'x64'){ 
+			await fs.chmod('./UPnP/Bin/RHEOS-x86-64',0o700)
+			return('./UPnP/Bin/RHEOS-x86-64')
+		} else if (os.arch() === 'ia32'){
+			await fs.chmod('./UPnP/Bin/RHEOS-x86',0o700)
+			return('./UPnP/Bin/RHEOS-x86')
+		}
 	}
 	else if (os.platform() == 'win32') {
-		return('./UPnP/Bin/rheos-upnp.exe')
+		return('./UPnP/Bin/RHEOS-upnp.exe')
 	} 
 }
 		
@@ -671,7 +679,7 @@ function get_elapsed_time(start_time) {
 	const hours = time_diff % 24
 	time_diff = Math.floor(time_diff / 24)
 	const days = time_diff;
-	return (days ? days + (days == 1 ? " day " : "days " ) : "") + (hours ? hours + (hours == 1 ? " hr " : "hrs " ) : "") + minutes + " min " + seconds + " sec";
+	return (days ? days + (days == 1 ? " day " : "days " ) : "") + (hours ? hours + (hours == 1 ? " hr " : "hrs " ) : "") + minutes + (minutes>1 ? " minutes ":" minute ") + seconds +(seconds >1 ? " seconds" : " second");
 }
 function play_state_changed(old_state,new_state){
 	const test = ['stopped','paused'];
