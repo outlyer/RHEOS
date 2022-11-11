@@ -452,7 +452,7 @@ async function update_zones(zones){
 			const roon_group = (z.outputs.map(output => get_pid(output.source_controls[0].display_name)))
 			const heos_group = group?.players ? group?.players.map(player => player.pid) : group;
 			( (z.state == 'paused' || z.state == 'stopped') ||  (play_state_changed(zone.state,z.state) && zone.now_playing.one_line.line1 === z.now_playing.one_line.line1)) || console.error(new Date().toLocaleString(), z.display_name, " ▶ ",z.now_playing?.one_line.line1)	
-			if (roon_group.length > 1 && (sum_array(roon_group) !== sum_array(heos_group))) {
+			if (roon_group.length  && (sum_array(roon_group) !== sum_array(heos_group))) {
 				await group_enqueue(roon_group)
 			}
 			rheos_zones.set(z.zone_id, z)
@@ -467,7 +467,7 @@ async function update_zones(zones){
 async function update_heos_groups() {
 	return new Promise(async function (resolve) {
 		rheos_groups.clear()
-		const res = await heos_command("group", "get_groups",60000).catch(err => console.error(err))
+		const res = await heos_command("group", "get_groups",30000).catch(err => console.error(err))
 		if (res?.payload.length) {
 			for (const group of res.payload) {
 				rheos_groups.set(group.gid, group)
