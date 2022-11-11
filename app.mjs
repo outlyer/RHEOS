@@ -481,7 +481,7 @@ async function connect_roon() {
 	let timer = setInterval(() => console.warn(" ⚠ Please ensure RHEOS is enabled in Settings -> Extensions"), 10000)
 	const roon = new RoonApi({
 		extension_id: "com.RHeos.beta",
-		display_name: "RHeos",
+		display_name: "Rheos",
 		display_version: "0.4.1-0",
 		publisher: "RHEOS",
 		email: "rheos.control@gmail.com",
