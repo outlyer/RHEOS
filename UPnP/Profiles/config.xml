@@ -25,28 +25,10 @@
   <slimmain_log>warn</slimmain_log>
   <upnp_log>info</upnp_log>
   <device>
-    <udn>uuid:c9367a88-61a4-1de5-0080-0005cd6c6aee</udn>
-    <name>Study</name>
-    <friendly_name>Study</friendly_name>
-    <mac>bb:bb:cd:6c:6a:ec</mac>
-    <enabled>1</enabled>
-    <mode>flc:0,r:-48000,s:16</mode>
-    <sample_rate>48000</sample_rate>
-  </device>
-  <device>
-    <udn>uuid:92d1a7f8-a6c2-1022-0080-0005cd759950</udn>
-    <name>Cobalt</name>
-    <friendly_name>Cobalt</friendly_name>
-    <mac>bb:bb:cd:75:99:50</mac>
-    <enabled>1</enabled>
-    <mode>flc:0,r:-48000,s:16</mode>
-    <sample_rate>48000</sample_rate>
-  </device>
-  <device>
-    <udn>uuid:bc27b0c8-5e99-178b-0080-0005cde2425e</udn>
-    <name>Master Bedroom</name>
-    <friendly_name>Master Bedroom</friendly_name>
-    <mac>bb:bb:cd:e2:42:5c</mac>
+    <udn>uuid:eab0e5e6-bed5-15bb-0080-0005cd807216</udn>
+    <name>Theater</name>
+    <friendly_name>Theater</friendly_name>
+    <mac>bb:bb:cd:80:72:14</mac>
     <enabled>1</enabled>
     <mode>flc:0,r:-48000,s:16</mode>
     <sample_rate>48000</sample_rate>
@@ -61,6 +43,15 @@
     <sample_rate>48000</sample_rate>
   </device>
   <device>
+    <udn>uuid:ae3a7d58-4ada-199b-0080-0005cd51f858</udn>
+    <name>Dining Room</name>
+    <friendly_name>Dining Room</friendly_name>
+    <mac>bb:bb:cd:51:f8:59</mac>
+    <enabled>1</enabled>
+    <mode>flc:0,r:-48000,s:16</mode>
+    <sample_rate>48000</sample_rate>
+  </device>
+  <device>
     <udn>uuid:7d6d6e3c-c603-1d5c-0080-0005cd51b1e0</udn>
     <name>Living Room</name>
     <friendly_name>Living Room</friendly_name>
@@ -70,10 +61,73 @@
     <sample_rate>48000</sample_rate>
   </device>
   <device>
+    <udn>uuid:391bf51e-cf84-1ecb-0080-0005cd75cce0</udn>
+    <name>Porch</name>
+    <friendly_name>Porch</friendly_name>
+    <mac>bb:bb:cd:75:cc:de</mac>
+    <enabled>1</enabled>
+    <mode>flc:0,r:-48000,s:16</mode>
+    <sample_rate>48000</sample_rate>
+  </device>
+  <device>
+    <udn>uuid:92d1a7f8-a6c2-1022-0080-0005cd759950</udn>
+    <name>Cobalt</name>
+    <friendly_name>Cobalt</friendly_name>
+    <mac>bb:bb:cd:75:99:50</mac>
+    <enabled>1</enabled>
+    <mode>flc:0,r:-48000,s:16</mode>
+    <sample_rate>48000</sample_rate>
+  </device>
+  <device>
+    <udn>uuid:37814f3e-016f-19ae-0080-0005cd721d88</udn>
+    <name>Pearl</name>
+    <friendly_name>Pearl</friendly_name>
+    <mac>bb:bb:cd:72:1d:88</mac>
+    <enabled>1</enabled>
+    <mode>flc:0,r:-48000,s:16</mode>
+    <sample_rate>48000</sample_rate>
+  </device>
+  <device>
+    <udn>uuid:1f91f0ab-4d19-151b-0080-0005cdf9dd52</udn>
+    <name>Family Room ND8006</name>
+    <friendly_name>Family Room ND8006</friendly_name>
+    <mac>bb:bb:cd:f9:dd:50</mac>
+    <enabled>1</enabled>
+    <mode>flc:0,r:-48000,s:16</mode>
+    <sample_rate>48000</sample_rate>
+  </device>
+  <device>
+    <udn>uuid:bc27b0c8-5e99-178b-0080-0005cde2425e</udn>
+    <name>Master Bedroom</name>
+    <friendly_name>Master Bedroom</friendly_name>
+    <mac>bb:bb:cd:e2:42:5c</mac>
+    <enabled>1</enabled>
+    <mode>flc:0,r:-48000,s:16</mode>
+    <sample_rate>48000</sample_rate>
+  </device>
+  <device>
+    <udn>uuid:c9367a88-61a4-1de5-0080-0005cd6c6aee</udn>
+    <name>Study</name>
+    <friendly_name>Study</friendly_name>
+    <mac>bb:bb:cd:6c:6a:ec</mac>
+    <enabled>1</enabled>
+    <mode>flc:0,r:-48000,s:16</mode>
+    <sample_rate>48000</sample_rate>
+  </device>
+  <device>
     <udn>uuid:1226abeb-d675-171d-0080-0005cd52b5dc</udn>
     <name>Soundbar</name>
     <friendly_name>Soundbar</friendly_name>
     <mac>bb:bb:cd:52:b5:dc</mac>
+    <enabled>1</enabled>
+    <mode>flc:0,r:-48000,s:16</mode>
+    <sample_rate>48000</sample_rate>
+  </device>
+  <device>
+    <udn>uuid:1862dd58-bc11-12ea-0080-0005cd51b45e</udn>
+    <name>Kitchen</name>
+    <friendly_name>Kitchen</friendly_name>
+    <mac>bb:bb:cd:51:b4:5f</mac>
     <enabled>1</enabled>
     <mode>flc:0,r:-48000,s:16</mode>
     <sample_rate>48000</sample_rate>
@@ -92,60 +146,6 @@
     <name>Crystal</name>
     <friendly_name>Crystal</friendly_name>
     <mac>bb:bb:cd:46:83:9f</mac>
-    <enabled>1</enabled>
-    <mode>flc:0,r:-48000,s:16</mode>
-    <sample_rate>48000</sample_rate>
-  </device>
-  <device>
-    <udn>uuid:ae3a7d58-4ada-199b-0080-0005cd51f858</udn>
-    <name>Dining Room</name>
-    <friendly_name>Dining Room</friendly_name>
-    <mac>bb:bb:cd:51:f8:59</mac>
-    <enabled>1</enabled>
-    <mode>flc:0,r:-48000,s:16</mode>
-    <sample_rate>48000</sample_rate>
-  </device>
-  <device>
-    <udn>uuid:eab0e5e6-bed5-15bb-0080-0005cd807216</udn>
-    <name>Theater</name>
-    <friendly_name>Theater</friendly_name>
-    <mac>bb:bb:cd:80:72:14</mac>
-    <enabled>1</enabled>
-    <mode>flc:0,r:-48000,s:16</mode>
-    <sample_rate>48000</sample_rate>
-  </device>
-  <device>
-    <udn>uuid:1f91f0ab-4d19-151b-0080-0005cdf9dd52</udn>
-    <name>Family Room ND8006</name>
-    <friendly_name>Family Room ND8006</friendly_name>
-    <mac>bb:bb:cd:f9:dd:50</mac>
-    <enabled>1</enabled>
-    <mode>flc:0,r:-48000,s:16</mode>
-    <sample_rate>48000</sample_rate>
-  </device>
-  <device>
-    <udn>uuid:391bf51e-cf84-1ecb-0080-0005cd75cce0</udn>
-    <name>Porch</name>
-    <friendly_name>Porch</friendly_name>
-    <mac>bb:bb:cd:75:cc:de</mac>
-    <enabled>1</enabled>
-    <mode>flc:0,r:-48000,s:16</mode>
-    <sample_rate>48000</sample_rate>
-  </device>
-  <device>
-    <udn>uuid:37814f3e-016f-19ae-0080-0005cd721d88</udn>
-    <name>Pearl</name>
-    <friendly_name>Pearl</friendly_name>
-    <mac>bb:bb:cd:72:1d:88</mac>
-    <enabled>1</enabled>
-    <mode>flc:0,r:-48000,s:16</mode>
-    <sample_rate>48000</sample_rate>
-  </device>
-  <device>
-    <udn>uuid:1862dd58-bc11-12ea-0080-0005cd51b45e</udn>
-    <name>Kitchen</name>
-    <friendly_name>Kitchen</friendly_name>
-    <mac>bb:bb:cd:51:b4:5f</mac>
     <enabled>1</enabled>
     <mode>flc:0,r:-48000,s:16</mode>
     <sample_rate>48000</sample_rate>
