@@ -15,7 +15,6 @@ import xml2js, { parseStringPromise } from "xml2js"
 import util from "node:util"
 let roon, svc_status, my_settings, svc_source_control, svc_transport, svc_volume_control, rheos_connection, my_players
 const system_info = [ip.address(), os.type(), os.hostname(), os.platform(), os.arch()]
-console.log(system_info.toString())
 const rheos = { processes: {}, mode: false, discovery: 0, working: false}
 const start_time = new Date()
 const queue_array = []
@@ -25,7 +24,6 @@ const rheos_players = new Map()
 const rheos_zones = new Map()
 const rheos_groups = new Map()
 const builder = new xml2js.Builder({ async: true })
-clean_up_on_exit()
 start_heos().catch(err => console.error(err))
 start_roon().catch(err => console.error(err))
 async function monitor() {
@@ -143,6 +141,7 @@ async function create_root_xml() {
 	})
 }
 async function start_heos(counter = 0) {
+	console.log(system_info.toString())
 	const heos = [HeosApi.discoverAndConnect({timeout:10000,port:1255, address:ip.address()}),HeosApi.discoverAndConnect({timeout:10000,port:1256, address:ip.address()})]
 	try {
 		rheos_connection = await Promise.all(heos).catch(()=>{console.error("⚠ Heos Connection failed")})
@@ -214,6 +213,7 @@ async function create_players() {
 					{ stdio: 'ignore' })
 		}
 	}
+	clean_up_on_exit()
 }
 async function start_roon() {
 	roon = await connect_roon().catch((err)=> {console.log("Failed to connect with ROON server",err)})
@@ -272,6 +272,28 @@ async function update_outputs(outputs){
 	return new Promise(async function (resolve) {
 	for (const op of outputs) {
 		op.source_controls  && update_volume(op,get_player(op?.source_controls[0]?.display_name))	
+	}
+	resolve()
+	}).catch(err => console.error(err))
+}
+async function update_zones(zones){
+	return new Promise(async function (resolve) {
+	for (const z of zones) {
+		await update_heos_groups()
+		const zone = rheos_zones.get(z.zone_id || z)
+		if (z.outputs){
+			const group = (rheos_groups.get(get_pid(z.outputs[0].source_controls[0]?.display_name)))
+			const roon_group = (z.outputs.map(output => get_pid(output.source_controls[0].display_name)))
+			const heos_group = group?.players ? group?.players.map(player => player.pid) : group;
+			( (z.state == 'paused' || z.state == 'stopped') ||  (play_state_changed(zone.state,z.state) && zone.now_playing.one_line.line1 === z.now_playing.one_line.line1)) || console.error(new Date().toLocaleString(), z.display_name, " ▶ ",z.now_playing?.one_line.line1)	
+			if (roon_group.length  && (sum_array(roon_group) !== sum_array(heos_group))) {
+				await group_enqueue(roon_group)
+			}
+			rheos_zones.set(z.zone_id, z)
+		} else {
+			rheos_zones.delete(z)
+		}
+
 	}
 	resolve()
 	}).catch(err => console.error(err))
@@ -442,28 +464,6 @@ async function group_dequeue(timer = 30000) {
 		await group_dequeue().catch(err => console.error("Failed to deque group 2",err))
 	}
 }
-async function update_zones(zones){
-	return new Promise(async function (resolve) {
-	for (const z of zones) {
-		await update_heos_groups()
-		const zone = rheos_zones.get(z.zone_id || z)
-		if (z.outputs){
-			const group = (rheos_groups.get(get_pid(z.outputs[0].source_controls[0]?.display_name)))
-			const roon_group = (z.outputs.map(output => get_pid(output.source_controls[0].display_name)))
-			const heos_group = group?.players ? group?.players.map(player => player.pid) : group;
-			( (z.state == 'paused' || z.state == 'stopped') ||  (play_state_changed(zone.state,z.state) && zone.now_playing.one_line.line1 === z.now_playing.one_line.line1)) || console.error(new Date().toLocaleString(), z.display_name, " ▶ ",z.now_playing?.one_line.line1)	
-			if (roon_group.length  && (sum_array(roon_group) !== sum_array(heos_group))) {
-				await group_enqueue(roon_group)
-			}
-			rheos_zones.set(z.zone_id, z)
-		} else {
-			rheos_zones.delete(z)
-		}
-
-	}
-	resolve()
-	}).catch(err => console.error(err))
-}
 async function update_heos_groups() {
 	return new Promise(async function (resolve) {
 		rheos_groups.clear()
@@ -478,7 +478,7 @@ async function update_heos_groups() {
 }
 async function connect_roon() {
 	return new Promise(async function (resolve,reject) {
-	let timer = setInterval(() => console.warn(" ⚠ Please ensure RHEOS is enabled in Settings -> Extensions"), 10000)
+	const timer = setInterval(() => console.warn(" ⚠ Please ensure RHEOS is enabled in Settings -> Extensions"), 10000)
 	const roon = new RoonApi({
 		extension_id: "com.RHeos.beta",
 		display_name: "Rheos",
@@ -527,7 +527,7 @@ async function connect_roon() {
 }
 async function update_status() {
 	let RheosStatus = '\n' + "RHEOS BRIDGE RUNNING : On " + system_info[2] + ' at ' + system_info[0] + '  for ' + get_elapsed_time(start_time) + '\n'
-	RheosStatus = RheosStatus + "_".repeat(120) + " \n \n " + (rheos.discovery > 0 ? ("⚠ CONNECTING HEOS DEVICES TO UPNP" + ("█".repeat(rheos.discovery)))
+	RheosStatus = RheosStatus + "_".repeat(120) + " \n \n " + (rheos.discovery > 0 ? ("⚠ UPnP CONNECTING  " + ("▓".repeat(rheos.discovery)+"░".repeat(40-rheos.discovery)))
 		: ("DISCOVERED " + rheos_players.size + " HEOS PLAYERS")) + "\n \n"
 	for (let player of rheos_players.values()) {
 		const { name, ip, model } = player
