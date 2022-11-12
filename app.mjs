@@ -78,17 +78,8 @@ async function add_listeners() {
 			}
 		})
 		.on({ commandGroup: "event", command: "players_changed" }, async () => {
-			const players = await heos_command("player", "get_players").catch(err => console.error("PLAYERS", err))
-			const player_names = players.payload.map(player => player.name)
-			const new_players = players.payload.filter(player => !player.output)
-			const deleted_players = [...rheos_players.values()].filter(player => !player_names.includes(player.name))
-			for (let player of new_players) {
-				my_settings[player.name] = "Off"
-			}
-			for (let player of deleted_players) {
-				rheos_players.delete(player.pid)
-				delete my_settings[player.name]
-			}
+			console.log("⚠ PLAYERS HAVE CHANGED")
+			start_heos()
 		})
 		.on({ commandGroup: "event", command: "player_playback_error" }, async (res) => {
 			console.error("⚠ PLAYBACK ERROR", res.heos.message.parsed.error)
@@ -141,7 +132,7 @@ async function create_root_xml() {
 	})
 }
 async function start_heos(counter = 0) {
-	console.log(system_info.toString())
+	counter === 0 && console.log(system_info.toString())
 	const heos = [HeosApi.discoverAndConnect({timeout:10000,port:1255, address:ip.address()}),HeosApi.discoverAndConnect({timeout:10000,port:1256, address:ip.address()})]
 	try {
 		rheos_connection = await Promise.all(heos).catch(()=>{console.error("⚠ Heos Connection failed")})
@@ -175,7 +166,7 @@ async function start_heos(counter = 0) {
 		await update_heos_groups().catch(err => console.error("⚠ Error Updating Heos Groups",err))
 	}
 	catch (err) {
-		console.log("⚠ SEARCHING FOR NEW HEOS PLAYERS")
+		counter === 0 && console.log("⚠ SEARCHING FOR NEW HEOS PLAYERS")
 		setTimeout(() => {start_heos(++counter)}, 5000)
 	}
 
@@ -281,7 +272,7 @@ async function update_zones(zones){
 	for (const z of zones) {
 		await update_heos_groups()
 		const zone = rheos_zones.get(z.zone_id || z)
-		if (z.outputs){
+		if (z.outputs && z.state){
 			const group = (rheos_groups.get(get_pid(z.outputs[0].source_controls[0]?.display_name)))
 			const roon_group = (z.outputs.map(output => get_pid(output.source_controls[0].display_name)))
 			const heos_group = group?.players ? group?.players.map(player => player.pid) : group;
@@ -632,7 +623,8 @@ function clean_up_on_exit(){
 		console.log("RHEOS IS SHUTTING DOWN")
 		for (let player of rheos_players.values()) {
 			if (rheos.processes[player.pid] && !rheos.processes[player.pid].killed) { 
-				process.kill(Number(rheos.processes[player.pid].pid))
+				try {process.kill(Number(rheos.processes[player.pid].pid))}
+				catch {}
 			}
 		}
 		process.exit()
