@@ -10,7 +10,7 @@ import child from "node:child_process"
 import fs from "node:fs/promises"
 import os from "node:os"
 import ip from "ip"
-import process from "node:process"
+import process, { pid } from "node:process"
 import xml2js, { parseStringPromise } from "xml2js"
 import util from "node:util"
 let roon, svc_status, my_settings, svc_source_control, svc_transport, svc_volume_control, rheos_connection, my_players
@@ -76,15 +76,22 @@ async function add_listeners() {
 				}
 			}
 		})
+		//.on({ commandGroup: "event", command: "player_state_changed" }, async (res) => {
+		//	const{pid,state}=res.heos.message.parsed
+		//	console.log("⚠ PLAYER STATES HAVE CHANGED",rheos_players.get(pid).name,state)
+		//})
+		//.on({ commandGroup: "event", command: "player_now_playing_changed" }, async (res) => {
+		//	const{pid,state}=res.heos.message.parsed
+		//	console.log("⚠ PLAYER NOW PLAYING CHANGED",rheos_players.get(pid).name)
+		//})
 		.on({ commandGroup: "event", command: "players_changed" }, async () => {
-			console.log("⚠ PLAYERS HAVE CHANGED")
+			console.log("⚠ PLAYERS HAVE CHANGED - RECONFIGURING")
 			start_heos()
 		})
 		.on({ commandGroup: "event", command: "player_playback_error" }, async (res) => {
-			console.error("⚠ PLAYBACK ERROR", res.heos.message.parsed.error)
-			if ( res.heos.message.parsed.error.includes("unable to play media")){
-				console.error(res)
-				svc_transport.control(player.zone, 'play')
+			console.error("⚠ PLAYBACK ERROR - ATTEMPTING TO PLAY AGAIN", res.heos.message.parsed.error)
+			if ( res.heos.message.parsed.error.includes("Unable to play media")){
+				svc_transport.control(rheos_players.get(res.heos.message.parsed.pid)?.zone, 'play')
 			}
 		})
 		.on({ commandGroup: "event", command: "player_volume_changed" }, async (res) => {
@@ -272,14 +279,15 @@ async function update_zones(zones){
 	return new Promise(async function (resolve) {
 	for (const z of zones) {
 		if (z.outputs ){
-			const zone =  z
-			const lead_player_pid = get_pid(zone.outputs[0]?.source_controls[0]?.display_name)
-			rheos_players.get(lead_player_pid).zone = z.zone_id
+			const old_zone =  rheos_zones.get(z.zone_id)
+			const lead_player_pid = get_pid(z.outputs[0]?.source_controls[0]?.display_name)
+			if (lead_player_pid) {rheos_players.get(lead_player_pid).zone = z.zone_id}
 			const group = (rheos_groups.get(lead_player_pid))
-			const old_roon_group = (rheos_zones.get(zone.zone_id))?.outputs.map(output => get_pid(output.source_controls[0].display_name))
-			const new_roon_group = (zone.outputs.map(output => get_pid(output.source_controls[0].display_name)))
+			const old_roon_group = (rheos_zones.get(z.zone_id))?.outputs.map(output => get_pid(output.source_controls[0].display_name))
+			const new_roon_group = (z.outputs.map(output => get_pid(output.source_controls[0].display_name)))
 			const heos_group = group?.players ? group?.players.map(player => player.pid) : group;
-			( (z.state == 'paused' || z.state == 'stopped') ||  (play_state_changed(zone.state,z.state) && zone.now_playing.one_line.line1 === z.now_playing.one_line.line1)) || console.error(new Date().toLocaleString(), z.display_name, " ▶ ",z.now_playing?.one_line.line1)	
+			const state_changed = play_state_changed(old_zone?.state,z.state);
+			z.state == 'paused' || z.state == 'stopped' || (old_zone?.now_playing?.one_line?.line1 == z?.now_playing?.one_line?.line1 ) ||  console.error(new Date().toLocaleString(), z.display_name, " ▶ ",z?.now_playing?.one_line?.line1)	
 			if ((sum_array(old_roon_group) !== sum_array(new_roon_group))  && (sum_array(new_roon_group) !== sum_array(heos_group))) {
 				await group_enqueue(new_roon_group)
 			}
@@ -447,14 +455,14 @@ async function group_enqueue(group) {
 async function group_dequeue(timer = 30000) {
 	if (rheos.working) { return }
 	const item = queue_array[0]
-	if (!item) {
+	if (!item?.group ) {
 		return
 	}
 	try {
 		rheos.working = true
 		if (sum_array(rheos_groups.get(item.group[0])?.players?.map(player => player.pid) ||  []) !== sum_array(item.group)) {
 			if (item.group.length == 1) { item.group = item.group[0] }
-			await heos_command("group", "set_group", { pid: item.group.toString() },timer).catch((err) => {item.reject(err); rheos.working = false; group_dequeue() })
+			await heos_command("group", "set_group", { pid: item?.group?.toString() },timer).catch((err) => {item.reject(err); rheos.working = false; group_dequeue() })
 		}
 		rheos.working = false 
 		queue_array.shift()
@@ -627,11 +635,11 @@ function get_elapsed_time(start_time) {
 	const hours = time_diff % 24
 	time_diff = Math.floor(time_diff / 24)
 	const days = time_diff;
-	return (days ? days + (days == 1 ? " day " : " days " ) : "") + (hours ? hours + 'hour'+ (hours === 1 ? " " : "s " ) : "") + minutes + (minutes === 1 ? " minute ":" minutes ") + seconds +(seconds === 1 ? " second " : " seconds ");
+	return (days ? days + (days == 1 ? " day " : " days " ) : "") + (hours ? hours + 'hour'+ (hours === 1 ? "  " : "s " ) : "") + minutes + (minutes === 1 ? " minute ":" minutes ") + seconds +(seconds === 1 ? " second " : " seconds ");
 }
 function play_state_changed(old_state,new_state){
 	const test = ['stopped','paused'];
-	return (test.indexOf(old_state)<0)===(test.indexOf(new_state)<0)
+	return (test.indexOf(old_state)<0)!==(test.indexOf(new_state)<0)
 }
 function clean_up_on_exit(){	
 	process.on('SIGINT',() => {
