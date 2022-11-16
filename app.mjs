@@ -10,7 +10,7 @@ import child from "node:child_process"
 import fs from "node:fs/promises"
 import os from "node:os"
 import ip from "ip"
-import process, { pid } from "node:process"
+import process from "node:process"
 import xml2js, { parseStringPromise } from "xml2js"
 import util from "node:util"
 let roon, svc_status, my_settings, svc_source_control, svc_transport, svc_volume_control, rheos_connection, my_players
@@ -76,22 +76,16 @@ async function add_listeners() {
 				}
 			}
 		})
-		//.on({ commandGroup: "event", command: "player_state_changed" }, async (res) => {
-		//	const{pid,state}=res.heos.message.parsed
-		//	console.log("⚠ PLAYER STATES HAVE CHANGED",rheos_players.get(pid).name,state)
-		//})
-		//.on({ commandGroup: "event", command: "player_now_playing_changed" }, async (res) => {
-		//	const{pid,state}=res.heos.message.parsed
-		//	console.log("⚠ PLAYER NOW PLAYING CHANGED",rheos_players.get(pid).name)
-		//})
 		.on({ commandGroup: "event", command: "players_changed" }, async () => {
 			console.log("⚠ PLAYERS HAVE CHANGED - RECONFIGURING")
 			start_heos()
 		})
 		.on({ commandGroup: "event", command: "player_playback_error" }, async (res) => {
-			console.error("⚠ PLAYBACK ERROR - ATTEMPTING TO PLAY AGAIN", res.heos.message.parsed.error)
 			if ( res.heos.message.parsed.error.includes("Unable to play media")){
 				svc_transport.control(rheos_players.get(res.heos.message.parsed.pid)?.zone, 'play')
+			}
+			else {
+				console.error("⚠ PLAYBACK ERROR - ATTEMPTING TO PLAY AGAIN", res.heos.message.parsed.error)
 			}
 		})
 		.on({ commandGroup: "event", command: "player_volume_changed" }, async (res) => {
@@ -495,7 +489,7 @@ async function connect_roon() {
 	const roon = new RoonApi({
 		extension_id: "com.RHeos.beta",
 		display_name: "Rheos",
-		display_version: "0.4.1-1",
+		display_version: "0.4.1-2",
 		publisher: "RHEOS",
 		email: "rheos.control@gmail.com",
 		website: "https:/github.com/LINVALE/RHEOS",
