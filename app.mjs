@@ -26,6 +26,7 @@ const rheos_groups = new Map()
 const builder = new xml2js.Builder({ async: true })
 start_heos().catch(err => console.error(err))
 start_roon().catch(err => console.error(err))
+init_signal_handlers()
 async function monitor() {
 	setInterval(async () => {
 		heos_command("system", "heart_beat", {}).catch(err => console.error("⚠  HEARTBEAT MISSED", err))
@@ -202,7 +203,6 @@ async function create_players() {
 					{ stdio: 'ignore' })
 		}
 	}
-	clean_up_on_exit()
 }
 async function start_roon() {
 	roon = await connect_roon().catch((err)=> {console.log("Failed to connect with ROON server",err)})
@@ -635,8 +635,8 @@ function play_state_changed(old_state,new_state){
 	const test = ['stopped','paused'];
 	return (test.indexOf(old_state)<0)!==(test.indexOf(new_state)<0)
 }
-function clean_up_on_exit(){	
-	process.on('SIGINT',() => {
+function init_signal_handlers() {
+    const handle = function(signal) {
 		console.log("RHEOS IS SHUTTING DOWN")
 		for (let player of rheos_players.values()) {
 			if (rheos.processes[player.pid] && !rheos.processes[player.pid].killed) { 
@@ -644,7 +644,12 @@ function clean_up_on_exit(){
 				catch {}
 			}
 		}
-		process.exit()
-	})
+        process.exit(0);
+    };
+    // Register signal handlers to enable a graceful stop of the container
+    process.on('SIGTERM', handle);
+    process.on('SIGINT', handle);
 }
+// Place the init_signal_handlers call in the initialization part of your code
+init_signal_handlers();
 
