@@ -312,7 +312,7 @@ async function heos_command(commandGroup, command, attributes = {}, timer = 5000
 	return new Promise(function (resolve, reject) {
 		setTimeout(() => {reject(`Heos command timed out: ${command} ${timer}`) }, timer)
 		commandGroup !== "event" && rheos_connection[0].write(commandGroup, command, attributes)
-		rheos_connection[0].once({ commandGroup: commandGroup, command: command, attributes }, (res) => {
+		let x = rheos_connection[0].once({ commandGroup: commandGroup, command: command, attributes }, (res) => {
 			res.parsed = res.heos.message.parsed
 			res.result = res.heos.result
 			if (res.heos.message.unparsed.includes("under process")) {
