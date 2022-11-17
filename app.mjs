@@ -35,6 +35,7 @@ async function monitor() {
 	return
 }
 async function add_listeners() {
+	process.setMaxListeners(32)
 	rheos_connection[1].write("system", "register_for_change_events", { enable: "on" })
 		.on({ commandGroup: "system", command: "heart_beat" }, async (res) => {
 			res?.heos?.result == "success" || console.error("⚠ HEARTBEAT failed", res)
