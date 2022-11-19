@@ -281,13 +281,15 @@ async function update_zones(zones){
 			const old_roon_group = (rheos_zones.get(z.zone_id))?.outputs.map(output => get_pid(output.source_controls[0].display_name))
 			const new_roon_group = (z.outputs.map(output => get_pid(output.source_controls[0].display_name)))
 			const heos_group = group?.players ? group?.players.map(player => player.pid) : group;
-			const state_changed = play_state_changed(old_zone?.state,z.state);
 			z.state == 'paused' || z.state == 'stopped' || (old_zone?.now_playing?.one_line?.line1 == z?.now_playing?.one_line?.line1 ) ||  console.error(new Date().toLocaleString(), z.display_name, " ▶ ",z?.now_playing?.one_line?.line1)	
 			if ((sum_array(old_roon_group) !== sum_array(new_roon_group))  && (sum_array(new_roon_group) !== sum_array(heos_group))) {
 				await group_enqueue(new_roon_group)
 			}
 			rheos_zones.set(z.zone_id, z)
-		} 
+		} else{  
+			let zone =(rheos_zones.get(z))
+			zone?.state && (zone.state = 'indeterminate')
+		}
 	}
 	resolve()
 	}).catch(err => console.error(err))
@@ -312,7 +314,7 @@ async function heos_command(commandGroup, command, attributes = {}, timer = 5000
 	return new Promise(function (resolve, reject) {
 		setTimeout(() => {reject(`Heos command timed out: ${command} ${timer}`) }, timer)
 		commandGroup !== "event" && rheos_connection[0].write(commandGroup, command, attributes)
-		let x = rheos_connection[0].once({ commandGroup: commandGroup, command: command, attributes }, (res) => {
+		rheos_connection[0].once({ commandGroup: commandGroup, command: command, attributes }, (res) => {
 			res.parsed = res.heos.message.parsed
 			res.result = res.heos.result
 			if (res.heos.message.unparsed.includes("under process")) {
@@ -405,16 +407,12 @@ async function start_listening() {
 async function choose_binary() {
 	if (os.platform() == 'linux') {
 		if (os.arch() === 'arm'){
-			await fs.chmod('./UPnP/Bin/RHEOS-armv5te',0o700)
 			return ('./UPnP/Bin/RHEOS-armv5te')
 		} else if (os.arch() === 'arm64'){
-			await fs.chmod('./UPnP/Bin/RHEOS-aarch64',0o700)
 			return('./UPnP/Bin/RHEOS-aarch64')
 		} else if (os.arch() === 'x64'){ 
-			await fs.chmod('./UPnP/Bin/RHEOS-x86-64',0o700)
 			return('./UPnP/Bin/RHEOS-x86-64')
 		} else if (os.arch() === 'ia32'){
-			await fs.chmod('./UPnP/Bin/RHEOS-x86',0o700)
 			return('./UPnP/Bin/RHEOS-x86')
 		}
 	}
@@ -462,14 +460,13 @@ async function group_dequeue(timer = 30000) {
 		rheos.working = false 
 		queue_array.shift()
 		item.resolve()
-		await group_dequeue().catch(err => console.error("Failed to deque group 1",err))
+		await group_dequeue().catch(err => console.error("Failed to deque group",err))
 	}
 	catch (err) {
-		console.log("ERROR CAUGHT IN ENQUE")
 		rheos.working = false
 		queue_array.shift()
 		item.reject(err)
-		await group_dequeue().catch(err => console.error("Failed to deque group 2",err))
+		await group_dequeue().catch(err => console.error("Failed to deque group",err))
 	}
 }
 async function update_heos_groups() {
@@ -632,10 +629,6 @@ function get_elapsed_time(start_time) {
 	const days = time_diff;
 	return (days ? days + (days == 1 ? " day " : " days " ) : "") + (hours ? hours + 'hour'+ (hours === 1 ? "  " : "s " ) : "") + minutes + (minutes === 1 ? " minute ":" minutes ") + seconds +(seconds === 1 ? " second " : " seconds ");
 }
-function play_state_changed(old_state,new_state){
-	const test = ['stopped','paused'];
-	return (test.indexOf(old_state)<0)!==(test.indexOf(new_state)<0)
-}
 function init_signal_handlers() {
     const handle = function(signal) {
 		console.log("RHEOS IS SHUTTING DOWN")
@@ -647,10 +640,8 @@ function init_signal_handlers() {
 		}
         process.exit(0);
     };
-    // Register signal handlers to enable a graceful stop of the container
     process.on('SIGTERM', handle);
     process.on('SIGINT', handle);
 }
-// Place the init_signal_handlers call in the initialization part of your code
-init_signal_handlers();
+
 
