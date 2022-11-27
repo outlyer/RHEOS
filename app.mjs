@@ -407,9 +407,9 @@ async function start_listening() {
 async function choose_binary() {
 	if (os.platform() == 'linux') {
 		if (os.arch() === 'arm'){
-			return ('./UPnP/Bin/RHEOS-armv6')
+			return ('./UPnP/Bin/RHEOS-arm')
 		} else if (os.arch() === 'arm64'){
-			return('./UPnP/Bin/RHEOS-aarch64')
+			return('./UPnP/Bin/RHEOS-arm')
 		} else if (os.arch() === 'x64'){ 
 			return('./UPnP/Bin/RHEOS-x86-64')
 		} else if (os.arch() === 'ia32'){
