@@ -407,7 +407,7 @@ async function start_listening() {
 async function choose_binary() {
 	if (os.platform() == 'linux') {
 		if (os.arch() === 'arm'){
-			return ('./UPnP/Bin/RHEOS-armv5te')
+			return ('./UPnP/Bin/RHEOS-armv6')
 		} else if (os.arch() === 'arm64'){
 			return('./UPnP/Bin/RHEOS-aarch64')
 		} else if (os.arch() === 'x64'){ 
