@@ -8,7 +8,6 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "@angablue/exe": "^1.1.6",
     "heos-api": "^4.0.0",
     "ip": "^1.1.8",
     "node-roon-api": "github:roonlabs/node-roon-api",
@@ -17,7 +16,7 @@
     "node-roon-api-status": "github:roonlabs/node-roon-api-status",
     "node-roon-api-transport": "github:roonlabs/node-roon-api-transport",
     "node-roon-api-volume-control": "github:roonlabs/node-roon-api-volume-control",
-    "pkg": "^5.8.0",
+    "node-uuid": "^1.4.8",
     "xml2js": "^0.4.23"
   },
   "repository": {
