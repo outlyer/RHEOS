@@ -13,6 +13,7 @@ import ip from "ip"
 import process from "node:process"
 import xml2js, { parseStringPromise } from "xml2js"
 import util from "node:util"
+import { resolveObjectURL } from "node:buffer"
 let roon, svc_status, my_settings, svc_source_control, svc_transport, svc_volume_control, rheos_connection, my_players
 const system_info = [ip.address(), os.type(), os.hostname(), os.platform(), os.arch()]
 const rheos = { processes: {}, mode: false, discovery: 0, working: false}
@@ -533,6 +534,7 @@ async function connect_roon() {
 }
 async function update_status() {
 	let RheosStatus = '\n' + "RHEOS BRIDGE RUNNING : On " + system_info[2] + ' at ' + system_info[0] + '  for ' + get_elapsed_time(start_time) + '\n'
+	if (rheos.discovery == 40) {rheos.discovery = 0}
 	RheosStatus = RheosStatus + "_".repeat(120) + " \n \n " + (rheos.discovery > 0 ? ("⚠ UPnP CONNECTING  " + ("▓".repeat(rheos.discovery)+"░".repeat(40-rheos.discovery)))
 		: ("DISCOVERED " + rheos_players.size + " HEOS PLAYERS")) + "\n \n"
 	for (let player of rheos_players.values()) {
