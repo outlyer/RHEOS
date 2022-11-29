@@ -13,7 +13,6 @@ import ip from "ip"
 import process from "node:process"
 import xml2js, { parseStringPromise } from "xml2js"
 import util from "node:util"
-import { resolveObjectURL } from "node:buffer"
 let roon, svc_status, my_settings, svc_source_control, svc_transport, svc_volume_control, rheos_connection, my_players
 const system_info = [ip.address(), os.type(), os.hostname(), os.platform(), os.arch()]
 const rheos = { processes: {}, mode: false, discovery: 0, working: false}
