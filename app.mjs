@@ -27,6 +27,7 @@ const builder = new xml2js.Builder({ async: true })
 start_heos().catch(err => console.error(err))
 start_roon().catch(err => console.error(err))
 init_signal_handlers()
+
 async function monitor() {
 	setInterval(async () => {
 		heos_command("system", "heart_beat", {}).catch(err => console.error("⚠  HEARTBEAT MISSED", err))
@@ -103,13 +104,24 @@ async function add_listeners() {
 		})
 }
 async function discover_devices() {
-	let message = setInterval(function () {
-		rheos.discovery++;
-		if (rheos.discovery > 29) {
-			process.exit(0)
-		} else 
-		{update_status()
-		}}, 1000
+	let message = setInterval(
+		function () {
+			rheos.discovery++;
+			if (rheos.discovery > 29) {
+				if (rheos.discovery <300){		
+					update_status(
+					`⚠ RHEOS ONLY DISCOVERS MARANTZ AND DENON HEOS ENABLE DEVICES
+					 ⚠ Unable to discover any HEOS enabled UPnP DEVICES  --- Continuing to search 
+					 ⚠ STOPPING RHEOS IN ${300 - rheos.discovery} SECONDS 
+					 ◉  TRY ADDING DEFAULT IP FOR A HEOS PLAYER IN SETTINGS 
+					 ◉  CHECK ROON EXTENSION PLAYER ADDRESS IS ON SAME NETWORK AS HEOS PLAYERS`, rheos.discovery > 200)
+				} else {
+					process.exit(0)	
+				}		
+			} else {
+				update_status()
+			}
+		}, 1000
 	)
 	return new Promise(async function (resolve, reject) {
 		const players = ([...rheos_players.values()].map(player => player.name))
@@ -120,8 +132,8 @@ async function discover_devices() {
 					const devices = slim_devices.squeeze2upnp.device.map(d => d.friendly_name[0])
             	if (players.every((player) => {return devices.includes(player)})){	
 					clearInterval(message)
+					await monitor()
 					rheos.discovery=0
-					update_status()
 					resolve(data)
 				} else {
 					throw error
@@ -129,7 +141,9 @@ async function discover_devices() {
 			} catch {
 				let f = await fs.open('./UPnP/Profiles/config.xml','w+')
 				await f.close()
-				await create_root_xml().catch(err => {resolve(discover_devices(err))})
+				await create_root_xml().catch(err => {
+					resolve(discover_devices(err))
+				})
 				clearInterval(message)
 				resolve (discover_devices())
 			}
@@ -243,13 +257,10 @@ async function start_roon() {
 	my_settings.send_metadata || (my_settings.send_metadata = 0)
 	const svc_settings = new RoonApiSettings(roon, {
 		get_settings: async function (cb) {
-			rheos.mode = true
-			await update_status().catch(()=>{console.error("Failed to update state")})
 			await create_players().catch(()=>{console.error("Failed to create players")})
 			cb(makelayout(my_settings))
 		},
 		save_settings: async function (req, isdryrun, settings) {
-			rheos.mode = false
 			create_players()
 			let l = makelayout(settings.values)
 			if (l.values.default_player_ip && !l.has_error) {
@@ -257,7 +268,6 @@ async function start_roon() {
 			}
 			req.send_complete(l.has_error ? "NotValid" : "Success", { settings: l })
 			if (!isdryrun && !l.has_error) {
-				rheos.mode = false
 				update_status()
 				my_settings = l.values
 				svc_settings.update_settings(l)
@@ -508,7 +518,6 @@ async function connect_roon() {
 		log_level: "none",
 		core_paired: async function (core) {
 			clearInterval(timer)
-			await monitor()
 			svc_transport = core.services.RoonApiTransport
 			svc_transport.subscribe_outputs(async function (cmd, data) {
 				switch (cmd){
