@@ -501,7 +501,7 @@ async function connect_roon() {
 	const roon = new RoonApi({
 		extension_id: "com.RHeos.beta",
 		display_name: "Rheos",
-		display_version: "0.4.1-2",
+		display_version: "0.5.1-0",
 		publisher: "RHEOS",
 		email: "rheos.control@gmail.com",
 		website: "https:/github.com/LINVALE/RHEOS",
@@ -546,7 +546,7 @@ async function connect_roon() {
 	})
 }
 async function update_status(message = null,warning = false) {
-	let RheosStatus = '\n' + "RHEOS BRIDGE RUNNING : On " + system_info[2] + ' at ' + system_info[0] + '  for ' + get_elapsed_time(start_time) + '\n'
+	let RheosStatus = '\n' + "RHEOS BRIDGE RUNNING : On " + system_info[2] +" "+ system_info [3]+" "+ system_info [4] + ' at ' + system_info[0] + '  for ' + get_elapsed_time(start_time) + '\n'
 	if (message){
 		svc_status.set_status(RheosStatus + "_".repeat(120)+ "\n \n" + message, warning)
 
