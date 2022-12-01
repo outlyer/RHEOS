@@ -16,6 +16,13 @@ A ROON Extension to allow  control of Denon/Marantz HEOS devices from ROON.
 
 Install/Update nodejs for your system (tested on Windows, Ubuntu 22.04.1 LTS, and Raspberry pi 4) . This requires at least Node v16, the current stable version. [https://nodejs.org/en/download/]
 
+The simplest way to install this is using the roon-extension-manager https://github.com/TheAppgineer/roon-extension-manager 
+Tested with a raspberry pi3 (Ubuntu 32 bit), pi 4(3Ubuntu 2 and 64bit) and NUC (Ubuntu 22.04.1 LTS amd64)
+
+Next option is to install docker and pull a copy from my repo : https://hub.docker.com/repository/docker/rheos/roon-extension-rheos
+
+To manually install (e.g. if you want to run on a Windows box) this works :-
+
 Clone a local copy of this repository to a local directory './RHEOS', or copy the zip file and unpack into './RHEOS'.
 
 From the command line try : “gh repo clone LINVALE/RHEOS ./RHEOS”
