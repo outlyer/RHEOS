@@ -431,7 +431,7 @@ async function start_listening() {
 async function choose_binary() {
 	if (os.platform() == 'linux') {
 		if (os.arch() === 'arm'){
-			return ('./UPnP/Bin/RHEOS-arm')
+			return ('./UPnP/Bin/RHEOS-arm6')
 		} else if (os.arch() === 'arm64'){
 			return('./UPnP/Bin/RHEOS-arm')
 		} else if (os.arch() === 'x64'){ 
@@ -656,7 +656,7 @@ function get_elapsed_time(start_time) {
 	const hours = time_diff % 24
 	time_diff = Math.floor(time_diff / 24)
 	const days = time_diff;
-	return (days ? days + (days == 1 ? " day " : " days " ) : "") + (hours ? hours + 'hour'+ (hours === 1 ? "  " : "s " ) : "") + minutes + (minutes === 1 ? " minute ":" minutes ") + seconds +(seconds === 1 ? " second " : " seconds ");
+	return (days ? days + (days == 1 ? " day " : " days " ) : "") + (hours ? hours + ' hour'+ (hours === 1 ? "  " : "s " ) : "") + minutes + (minutes === 1 ? " minute ":" minutes ") + seconds +(seconds === 1 ? " second " : " seconds ");
 }
 function init_signal_handlers() {
     const handle = function(signal) {
