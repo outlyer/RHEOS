@@ -310,9 +310,16 @@ async function update_zones(zones){
 				await group_enqueue(new_roon_group)
 			}
 			rheos_zones.set(z.zone_id, z)
-		} else{  
-			let zone =(rheos_zones.get(z))
-			zone?.state && (zone.state = 'indeterminate')
+		} else{  	
+			const zone =(rheos_zones.get(z))
+			if (zone){
+				const lead_player_pid = get_pid(zone.outputs[0]?.source_controls[0]?.display_name)
+				const group = (rheos_groups.get(lead_player_pid))
+				if (group?.gid) {
+					await group_enqueue(group)
+				}
+				zone.state = 'indeterminate'
+			}	
 		}
 	}
 	resolve()
@@ -431,7 +438,7 @@ async function start_listening() {
 async function choose_binary() {
 	if (os.platform() == 'linux') {
 		if (os.arch() === 'arm'){
-			return ('./UPnP/Bin/RHEOS-arm6')
+			return ('./UPnP/Bin/RHEOS-armv6')
 		} else if (os.arch() === 'arm64'){
 			return('./UPnP/Bin/RHEOS-arm')
 		} else if (os.arch() === 'x64'){ 
@@ -511,7 +518,7 @@ async function connect_roon() {
 	const roon = new RoonApi({
 		extension_id: "com.RHeos.beta",
 		display_name: "Rheos",
-		display_version: "0.5.1-0",
+		display_version: "0.5.1-1",
 		publisher: "RHEOS",
 		email: "rheos.control@gmail.com",
 		website: "https:/github.com/LINVALE/RHEOS",
