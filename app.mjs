@@ -29,18 +29,22 @@ init_signal_handlers()
 
 async function get_rheos_settings(){
 	try{ 
-		rheos_settings = await fs.readFile("/rheos/rheos_settings","utf-8")
-		my_settings = rheos_settings?.settings
+		console.log("TESTING")
+		await fs.access("/home/node/config.json","utf-8")
+		let rheos_settings = await fs.readFile("/home/node/config.json","utf-8")
+		console.log("GOT SETTINGS",rheos_settings)
+		my_settings = rheos_settings
  	}
 	catch{
+		console.log("FAILED TO ACCESS CONFIG")
 		my_settings = undefined
    	}
 }
 async function set_rheos_settings(){
 	try{ 
-		await fs.access("/rheos")
-		await fs.writeFile("/rheos/rheos_test.txt","abc","utf-8")
-		await fs.writeFile("/rheos/rheos_settings",JSON.stringify(my_settings),"utf-8")
+		console.log("THIS WOULD SAVE SETTINGS")
+		//await fs.writeFile("/rheos/rheos_test.txt","abc","utf-8")
+		//await fs.writeFile("/rheos/rheos_settings",JSON.stringify(my_settings),"utf-8")
 		return
 		
  	}
