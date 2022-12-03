@@ -47,11 +47,6 @@ async function set_rheos_settings(){
 		return
    	}
 }
-
-
-
-
-
 async function monitor() {
 	setInterval(async () => {
 		heos_command("system", "heart_beat", {}).catch(err => console.error("⚠  HEARTBEAT MISSED", err))
