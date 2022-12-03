@@ -29,7 +29,7 @@ init_signal_handlers()
 
 async function get_rheos_settings(){
 	try{ 
-		rheos_settings = await fs.readFile("./rheos/rheos_settings","utf-8")
+		rheos_settings = await fs.readFile("/rheos/rheos_settings","utf-8")
 		my_settings = rheos_settings?.settings
  	}
 	catch{
@@ -39,7 +39,7 @@ async function get_rheos_settings(){
 async function set_rheos_settings(){
 	try{ 
 		await fs.access("./rheos")
-		await fs.writeFile("./rheos/rheos_settings",JSON.stringify(my_settings),"utf-8")
+		await fs.writeFile("/rheos/rheos_settings",JSON.stringify(my_settings),"utf-8")
 		return
 		
  	}
