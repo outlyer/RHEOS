@@ -38,7 +38,8 @@ async function get_rheos_settings(){
 }
 async function set_rheos_settings(){
 	try{ 
-		await fs.access("./rheos")
+		await fs.access("/rheos")
+		await fs.writeFile("/rheos/rheos_test.txt","abc","utf-8")
 		await fs.writeFile("/rheos/rheos_settings",JSON.stringify(my_settings),"utf-8")
 		return
 		
