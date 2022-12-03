@@ -24,9 +24,33 @@ const rheos_players = new Map()
 const rheos_zones = new Map()
 const rheos_groups = new Map()
 const builder = new xml2js.Builder({ async: true })
-start_heos().catch(err => console.error(err))
-start_roon().catch(err => console.error(err))
+get_rheos_settings().then(()=> {Promise.all([start_heos().catch(err => console.error(err)),	start_roon().catch(err => console.error(err))])})
 init_signal_handlers()
+
+async function get_rheos_settings(){
+	try{ 
+		rheos_settings = await fs.readFile("./rheos/rheos_settings","utf-8")
+		my_settings = rheos_settings?.settings
+ 	}
+	catch{
+		my_settings = undefined
+   	}
+}
+async function set_rheos_settings(){
+	try{ 
+		await fs.access("./rheos")
+		await fs.writeFile("./rheos/rheos_settings",JSON.stringify(my_settings),"utf-8")
+		return
+		
+ 	}
+	catch{
+		return
+   	}
+}
+
+
+
+
 
 async function monitor() {
 	setInterval(async () => {
@@ -199,6 +223,7 @@ async function start_heos(counter = 0) {
 		setTimeout(() => {start_heos(++counter)}, 5000)
 	}
 }
+
 async function get_players() {
 	if (!rheos_connection) {reject("AWAITING CONNECTION")}
 	return new Promise(function (resolve, reject) {
@@ -239,22 +264,10 @@ async function start_roon() {
 	svc_source_control = new RoonApiSourceControl(roon)
 	svc_volume_control = new RoonApiVolumeControl(roon)
 	svc_transport = new RoonApiTransport(roon)
-	my_settings = roon.load_config("settings") || {}
+	const def = JSON.parse(await fs.readFile('./default_settings.json','utf-8'))
+	my_settings = my_settings || roon.load_config("settings")|| def.settings || {}
 	my_players = roon.load_config("players") || []
-	my_settings.host_ip || (my_settings.host_ip = ip.address())
-	my_settings.streambuf_size || (my_settings.streambuf_size = 524288)
-	my_settings.output_size || (my_settings.output_size = 8388608)
-	my_settings.stream_length || (my_settings.stream_length = -3)
-	my_settings.seek_after_pause || (my_settings.seek_after_pause = 1)
-	my_settings.volume_on_play || (my_settings.volume_on_play = -1)
-	my_settings.volume_feedback || (my_settings.volume_feedback = 0)
-	my_settings.accept_nexturi || (my_settings.accept_nexturi = 0)
-	my_settings.flac_header || (my_settings.flac_header = 2)
-	my_settings.keep_alive || (my_settings.keep_alive = 0)
-	my_settings.next_delay || (my_settings.next_delay = 15)
-	my_settings.flow || (my_settings.flow = false)
-	my_settings.send_coverart || (my_settings.send_coverart = 0)
-	my_settings.send_metadata || (my_settings.send_metadata = 0)
+
 	const svc_settings = new RoonApiSettings(roon, {
 		get_settings: async function (cb) {
 			await create_players().catch(()=>{console.error("Failed to create players")})
@@ -272,6 +285,7 @@ async function start_roon() {
 				my_settings = l.values
 				svc_settings.update_settings(l)
 				roon.save_config("settings", my_settings)
+				await set_rheos_settings()
 				await build_devices().catch(()=>{console.error("Failed to build devices")})
 			}
 		}
