@@ -13,9 +13,9 @@ import ip from "ip"
 import process from "node:process"
 import xml2js, { parseStringPromise } from "xml2js"
 import util from "node:util"
-let roon, svc_status, my_settings, svc_source_control, svc_transport, svc_volume_control, rheos_connection, my_players
+let roon, svc_status, my_settings, svc_source_control, svc_transport, svc_volume_control, rheos_connection, my_players 
 const system_info = [ip.address(), os.type(), os.hostname(), os.platform(), os.arch()]
-const rheos = { processes: {}, mode: false, discovery: 0, working: false}
+const rheos = { processes: {}, mode: true, discovery: 0, working: false}
 const start_time = new Date()
 const queue_array = []
 const execFileSync = util.promisify(child.execFile);
@@ -24,34 +24,9 @@ const rheos_players = new Map()
 const rheos_zones = new Map()
 const rheos_groups = new Map()
 const builder = new xml2js.Builder({ async: true })
-get_rheos_settings().then(()=> {Promise.all([start_heos().catch(err => console.error(err)),	start_roon().catch(err => console.error(err))])})
 init_signal_handlers()
+Promise.all([start_heos().catch(err => console.error(err)),	start_roon().catch(err => console.error(err))]).then(()=> {rheos.mode = false})
 
-async function get_rheos_settings(){
-	try{ 
-		console.log("TESTING")
-		await fs.access("/home/node/config.json","utf-8")
-		let rheos_settings = await fs.readFile("/home/node/config.json","utf-8")
-		console.log("GOT SETTINGS",rheos_settings)
-		my_settings = rheos_settings
- 	}
-	catch{
-		console.log("FAILED TO ACCESS CONFIG")
-		my_settings = undefined
-   	}
-}
-async function set_rheos_settings(){
-	try{ 
-		console.log("THIS WOULD SAVE SETTINGS")
-		//await fs.writeFile("/rheos/rheos_test.txt","abc","utf-8")
-		//await fs.writeFile("/rheos/rheos_settings",JSON.stringify(my_settings),"utf-8")
-		return
-		
- 	}
-	catch{
-		return
-   	}
-}
 async function monitor() {
 	setInterval(async () => {
 		heos_command("system", "heart_beat", {}).catch(err => console.error("⚠  HEARTBEAT MISSED", err))
@@ -198,9 +173,11 @@ async function start_heos(counter = 0) {
 		const new_p = sum_array(players.map(x => x.pid))
 		my_players.players = players
 		roon.save_config("players",players)	
+		players.forEach((player )=> { my_settings[player.name] ||(my_settings[player.name] = "CD")})
+		
 		if (new_p && (old_p === new_p)){
 			for (let player of players) {
-				player.resolution = my_settings[player.name]
+				player.resolution = my_settings[player.name] || 'CD'
 				rheos_players.set(player.pid, player)
 			}
 			players.sort((a, b) => {
@@ -219,7 +196,7 @@ async function start_heos(counter = 0) {
 		await start_listening().catch(err => console.error("⚠ Error Starting Listening",err => {throw error(err)}))	
 	}
 	catch (err) {
-		update_status("⚠ SEARCHING FOR NEW HEOS PLAYERS",false)
+		update_status( "⚠ SEARCHING FOR NEW HEOS PLAYERS",false)
 		setTimeout(() => {start_heos(++counter)}, 5000)
 	}
 }
@@ -245,6 +222,7 @@ async function get_players() {
 	})
 }
 async function create_players() {
+rheos.mode = true
 	for await (const player of rheos_players.values()) {
 		if (!rheos.processes[player.pid] || rheos.processes[player.pid].killed) {
 			const name = player.name.replace(/\s/g, "")
@@ -265,7 +243,7 @@ async function start_roon() {
 	svc_volume_control = new RoonApiVolumeControl(roon)
 	svc_transport = new RoonApiTransport(roon)
 	const def = JSON.parse(await fs.readFile('./default_settings.json','utf-8'))
-	my_settings = my_settings || roon.load_config("settings")|| def.settings || {}
+	my_settings = roon.load_config("settings")|| def.settings || {}
 	my_players = roon.load_config("players") || []
 
 	const svc_settings = new RoonApiSettings(roon, {
@@ -285,7 +263,6 @@ async function start_roon() {
 				my_settings = l.values
 				svc_settings.update_settings(l)
 				roon.save_config("settings", my_settings)
-				await set_rheos_settings()
 				await build_devices().catch(()=>{console.error("Failed to build devices")})
 			}
 		}
@@ -576,30 +553,32 @@ async function connect_roon() {
 	})
 }
 async function update_status(message = null,warning = false) {
-	let RheosStatus = '\n' + "RHEOS BRIDGE RUNNING : On " + system_info[2] +" "+ system_info [3]+" "+ system_info [4] + ' at ' + system_info[0] + '  for ' + get_elapsed_time(start_time) + '\n'
+	let RheosStatus = rheos_players.size + " HEOS Players on" + system_info[2] +" "+ system_info [3]+" "+ system_info [4] + ' at ' + system_info[0] + '  for ' + get_elapsed_time(start_time) + '\n'
 	if (message){
-		svc_status.set_status(RheosStatus + "_".repeat(120)+ "\n \n" + message, warning)
-
+		svc_status.set_status(RheosStatus  + message, warning)
 	}else {
-	RheosStatus = RheosStatus + "_".repeat(120) + " \n \n " + (rheos.discovery > 0 ? ("⚠      UPnP CONNECTING       " + ("▓".repeat((rheos.discovery))+"░".repeat(30-rheos.discovery)))
+	if (rheos.mode){
+		RheosStatus = RheosStatus + "_".repeat(120) + " \n \n " + (rheos.discovery > 0 ? ("⚠      UPnP CONNECTING       " + ("▓".repeat((rheos.discovery))+"░".repeat(30-rheos.discovery)))
 		: ("DISCOVERED " + rheos_players.size + " HEOS PLAYERS")) + "\n \n"
-	for (let player of rheos_players.values()) {
+	
+		for (let player of rheos_players.values()) {
 		const { name, ip, model } = player
 		let quality = (my_settings[player.name])
 		RheosStatus = RheosStatus + (rheos.discovery ? "◐◓◑◒".slice(rheos.discovery % 4, (rheos.discovery % 4) + 1) + " " : (quality === "HR")  ?"◉  " :"◎  " ) + name?.toUpperCase() + " \t " + model + "\t" + ip + "\n"
+		}
+		RheosStatus = RheosStatus + "_".repeat(120) + "\n \n"
 	}
-	RheosStatus = RheosStatus + "_".repeat(120) + "\n \n"
 	for (let zone of [...rheos_zones.values()].filter(zone => zone.state == "playing")) {
 		RheosStatus = RheosStatus + "🎶  " + zone.display_name + "\t ▶ \t" + zone.now_playing.one_line.line1 + "\n"
 	}
-	RheosStatus = RheosStatus + "_".repeat(120)
-	svc_status.set_status(RheosStatus, rheos.mode)
+	rheos.mode && (RheosStatus = RheosStatus + "_".repeat(120))
+	svc_status.set_status(RheosStatus, warning)
 	}
 
 }
 function makelayout(my_settings) {
 	const players = [...rheos_players.values()],
-		ips = players.map(player => new Object({ "title": player.model + ' (' + player.name + ') ' + ' : ' + player.ip, "value": player.ip }))
+	ips = players.map(player => new Object({ "title": player.model + ' (' + player.name + ') ' + ' : ' + player.ip, "value": player.ip }))
 	ips.push({ title: "No Default Connection", value: undefined })
 	let l = {
 		values: my_settings,
