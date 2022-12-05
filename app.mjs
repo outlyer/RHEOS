@@ -48,6 +48,7 @@ async function add_listeners() {
 			await create_players().catch(err => console.error(err))
 			await add_listeners().catch(err => console.error(err))
 			await start_listening().catch(err => console.error(err))
+			rheos.mode = false
 		})
 		.onError((err) => console.error("⚠ HEOS REPORTS ERROR", err))
 		.on({ commandGroup: "event", command: "groups_changed" }, async (res) => {
@@ -152,7 +153,9 @@ async function create_root_xml() {
 	const app = await (choose_binary())
 	return new Promise(async function (resolve,reject) {	
 		try {
+			rheos.mode = true
 			await execFileSync(app, ['-i', './UPnP/Profiles/config.xml', '-b', ip.address()])
+			rheos.mode = false
 			resolve()
 		} 
 		catch (err) {
@@ -222,7 +225,6 @@ async function get_players() {
 	})
 }
 async function create_players() {
-rheos.mode = true
 	for await (const player of rheos_players.values()) {
 		if (!rheos.processes[player.pid] || rheos.processes[player.pid].killed) {
 			const name = player.name.replace(/\s/g, "")
@@ -248,11 +250,9 @@ async function start_roon() {
 
 	const svc_settings = new RoonApiSettings(roon, {
 		get_settings: async function (cb) {
-			await create_players().catch(()=>{console.error("Failed to create players")})
 			cb(makelayout(my_settings))
 		},
 		save_settings: async function (req, isdryrun, settings) {
-			create_players()
 			let l = makelayout(settings.values)
 			if (l.values.default_player_ip && !l.has_error) {
 				await HeosApi.connect(l.values.default_player_ip, 1000).catch(err => (l.has_error = err))
