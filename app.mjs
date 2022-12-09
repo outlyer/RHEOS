@@ -279,7 +279,7 @@ async function update_outputs(outputs){
 	for (const op of outputs) {	
 		if (op.source_controls && (player = get_player(op?.source_controls[0]?.display_name))){
 			player.output = op.output_id
-			update_volume(op,get_player(op?.source_controls[0]?.display_name))	
+			await update_volume(op,get_player(op?.source_controls[0]?.display_name))	
 		}
 	}
 	resolve()
@@ -307,7 +307,7 @@ async function update_zones(zones){
 				const lead_player_pid = get_pid(zone.outputs[0]?.source_controls[0]?.display_name)
 				const group = (rheos_groups.get(lead_player_pid))
 				if (group?.gid) {
-					await group_enqueue(group)
+					await group_enqueue([group.gid])
 				}
 				zone.state = 'indeterminate'
 			}	
