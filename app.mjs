@@ -406,11 +406,11 @@ async function build_devices() {
 				if (pid) {
 					if (my_settings[(device.name[0])] == "HR") {
 						device.enabled = ['1']
-						device.mode = (("flc:0,r:-192000,s:24").toString().concat(my_settings.flow ? ",flow" : ""))
+						device.mode = (("flc:0,r:192000,s:24").toString().concat(my_settings.flow ? ",flow" : ""))
 						device.sample_rate = ['192000']
 					} else {
 						device.enabled = ['1']
-						device.mode = (("flc:0,r:-48000,s:16").toString().concat(my_settings.flow ? ",flow" : ""))
+						device.mode = (("flc:0,r:48000,s:16").toString().concat(my_settings.flow ? ",flow" : ""))
 						device.sample_rate = ['48000']
 					}
 					let subtemplate = { "squeeze2upnp": { "common": template.squeeze2upnp.common, "device": [device] } }
