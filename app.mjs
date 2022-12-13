@@ -461,6 +461,16 @@ async function choose_binary() {
 	else if (os.platform() == 'win32') {
 		return('./UPnP/Bin/RHEOS-upnp.exe')
 	} 
+	else if (os.platform() == 'darwin') {
+		console.log("ATTEMPTING LOADING MAC OS")
+		try {await fs.chmod('./UPnP/Bin/RHEOS-macos-x86_64', 0o557)
+			console.log("LOADING MAC BINARIES")
+			return('./UPnP/Bin/RHEOS-macos-x86_64')} 
+		catch {
+          	console.error("UNABLE TO LOAD MAC BINARIES- ABORTING")
+		  	process.exit(0)
+		}
+	}
 	else {
 		console.error("THIS OPERATING SYSTEM IS IS NOT SUPPORTED");
 	 	process.exit(0)
