@@ -8,11 +8,11 @@
         "volume_on_play": -1,
         "volume_feedback": 0,
         "accept_nexturi": 0,
-        "flac_header": 2,
+        "flac_header": 0,
         "keep_alive": 0,
         "next_delay": 15,
-        "flow": false,
-        "send_coverart": 0,
-        "send_metadata": 0
+        "send_coverart": false,
+        "send_metadata": false,
+        "flow": 0
         }
     }

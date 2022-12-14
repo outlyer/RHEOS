@@ -184,6 +184,8 @@ async function start_heos(counter = 0) {
 		rheos_connection[1].socket.setMaxListeners(32)
 		my_players = roon.load_config("players") || []
 		const players = await get_players().catch(()=>{console.error("⚠ Unable to discover Heos Players")})
+		
+		
 		const old_p = sum_array(my_players.map(x => x.pid))
 		const new_p = sum_array(players.map(x => x.pid))
 		my_players.players = players
@@ -380,6 +382,7 @@ async function build_devices() {
 						"codecs": ["aac,ogg,flc,alc,pcm,mp3"],
 						"forced_mimetypes": ["audio/mpeg,audio/vnd.dlna.adts,audio/mp4,audio/x-ms-wma,application/ogg,audio/x-flac"],
 						"mode": [("flc:0,r:-48000,s:16").toString().concat(my_settings.flow ? ",flow" : "")],
+						"mode": ["thru"],
 						"raw_audio_format": ["raw,wav,aif"],
 						"sample_rate": ['48000'],
 						"L24_format": ['2'],
@@ -392,6 +395,7 @@ async function build_devices() {
 						"keep_alive": [my_settings.keep_alive],
 						"send_metadata": [my_settings.send_metadata],
 						"send_coverart": [my_settings.send_coverart],
+						"flow":[my_settings.flow]
 					}
 				],
 				"device": []
@@ -406,11 +410,17 @@ async function build_devices() {
 				if (pid) {
 					if (my_settings[(device.name[0])] == "HR") {
 						device.enabled = ['1']
-						device.mode = (("flc:0,r:192000,s:24").toString().concat(my_settings.flow ? ",flow" : ""))
+						device.mode = ("flc:0,r:-192000,s:24").toString().concat(my_settings.flow ? ",flow" : "")
 						device.sample_rate = ['192000']
-					} else {
+					} 
+					else if (my_settings[(device.name[0])] == "thru") {
 						device.enabled = ['1']
-						device.mode = (("flc:0,r:48000,s:16").toString().concat(my_settings.flow ? ",flow" : ""))
+						device.mode = "thru"
+						device.sample_rate = ['192000']
+					}
+					else {
+						device.enabled = ['1']
+						device.mode = ("flc:0,r:48000,s:16").toString().concat(my_settings.flow ? ",flow" : "")
 						device.sample_rate = ['48000']
 					}
 					let subtemplate = { "squeeze2upnp": { "common": template.squeeze2upnp.common, "device": [device] } }
@@ -463,7 +473,8 @@ async function choose_binary() {
 	} 
 	else if (os.platform() == 'darwin') {
 		console.log("ATTEMPTING LOADING MAC OS")
-		try {await fs.chmod('./UPnP/Bin/RHEOS-macos-x86_64', 0o557)
+		try {
+			await fs.chmod('./UPnP/Bin/RHEOS-macos-x86_64', 0o557)
 			console.log("LOADING MAC BINARIES")
 			return('./UPnP/Bin/RHEOS-macos-x86_64')} 
 		catch {
@@ -584,7 +595,7 @@ async function connect_roon() {
 	})
 }
 async function update_status(message = null,warning = false) {
-	let RheosStatus = rheos_players.size + " HEOS Players on" + system_info[2] +" "+ system_info [3]+" "+ system_info [4] + ' at ' + system_info[0] + '  for ' + get_elapsed_time(start_time) + '\n'
+	let RheosStatus = rheos_players.size + " HEOS Players on " + system_info[2] +" "+ system_info [3]+" "+ system_info [4] + ' at ' + system_info[0] + '  for ' + get_elapsed_time(start_time) + '\n'
 	if (message){
 		svc_status.set_status(RheosStatus  + message, warning)
 	}else {
@@ -633,7 +644,7 @@ function makelayout(my_settings) {
 				_players_status.items.push({
 					title: ('◉ ') + player.name.toUpperCase(),
 					type: "dropdown",
-					values: [{ title: "Hi-Resolution", value: "HR" }, { title: "CD Quality", value: "CD" }],
+					values: [{ title: "Hi-Resolution", value: "HR" }, { title: "CD Quality", value: "CD" },{ title: "Pass Through", value: "thru" }],
 					setting: player.name
 				})
 			}
@@ -652,9 +663,10 @@ function makelayout(my_settings) {
 			{ title: "● Flac Header", type: "dropdown", setting: 'flac_header', values: [{ title: "None", value: 0 }, { title: 'Set sample and checksum to 0', value: 1 }, { title: "Reinsert fixed", value: 2 }, { title: "Reinsert calculated", value: 3 }] },
 			{ title: "● Keep Alive", type: "integer", setting: 'keep_alive', min: -1, max: 120 },
 			{ title: "● Next Delay", type: "integer", setting: 'next_delay', min: 0, max: 60 },
-			{ title: "● Gapless", type: "dropdown", setting: 'flow', values: [{ title: "On", value: true }, { title: 'Off', value: false }] },
+			//{ title: "● Gapless", type: "dropdown", setting: 'accept_next_uri', values: [{ title: "On", value: 1 }, { title: 'Off', value: 0 }] },
 			{ title: "● Send Metadata", type: "dropdown", setting: 'send_metadata', values: [{ title: "On", value: 1 }, { title: 'Off', value: 0 }] },
-			{ title: "● Send Cover Art", type: "dropdown", setting: 'send_coverart', values: [{ title: "On", value: 1 }, { title: 'Off', value: 0 }] }
+			{ title: "● Send Cover Art", type: "dropdown", setting: 'send_coverart', values: [{ title: "On", value: 1 }, { title: 'Off', value: 0 }] },
+			{ title: "● Flow Mode", type: "dropdown", setting: 'flow', values: [{ title: "On", value: 1 }, { title: 'Off', value: 0 }] }
 		]
 	})
 	return (l)
