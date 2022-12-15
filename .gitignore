@@ -1,4 +1,5 @@
 config.json
 UPnP/common.log
 UPnP/Profiles/*.*
+UPnP/Bin/*
 UPnP/Profiles/config.xml
