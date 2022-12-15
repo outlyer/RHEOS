@@ -13,7 +13,7 @@ import ip from "ip"
 import process from "node:process"
 import xml2js, { parseStringPromise } from "xml2js"
 import util from "node:util"
-let roon, svc_status, my_settings, svc_source_control, svc_transport, svc_volume_control, rheos_connection, my_players 
+let roon, svc_status, my_settings, svc_source_control, svc_transport, svc_volume_control, rheos_connection, my_players; 
 const system_info = [ip.address(), os.type(), os.hostname(), os.platform(), os.arch()]
 const rheos = { processes: {}, mode: true, discovery: 0, working: false}
 const start_time = new Date()
@@ -24,12 +24,16 @@ const rheos_players = new Map()
 const rheos_zones = new Map()
 const rheos_groups = new Map()
 const builder = new xml2js.Builder({ async: true })
+const log = process.argv.includes("-l")||process.argv.includes("-log") || false
+
 init_signal_handlers()
 start_up()
+
 async function start_up(){
+	log && console.error("STARTING UP")
 	await Promise.all([start_heos().catch(err => console.error(err)), start_roon().catch(err => console.error(err))]).then(()=> {rheos.mode = false})
 	await discover_devices().catch(err => {throw error(err)})
-	await build_devices().catch(err => console.error("⚠ Error Building Devices",err => {throw error(err)}))
+    await build_devices().catch(err => console.error("⚠ Error Building Devices",err => {throw error(err)}))
 	await create_players().catch(err => console.error("⚠ Error Creating Players",err => {throw error(err)}))
 	await add_listeners().catch(err => console.error("⚠ Error Adding Listeners",err => {throw error(err)}))
 	setTimeout(() => {start_listening().catch(err => console.error("⚠ Error Starting Listening",err => {throw error(err)}))},10000)
@@ -42,6 +46,7 @@ async function monitor() {
 	return
 }
 async function add_listeners() {
+	log && console.error("SETTING LISTENERS")
 	process.setMaxListeners(32)
 	rheos_connection[1].write("system", "register_for_change_events", { enable: "on" })
 		.on({ commandGroup: "system", command: "heart_beat" }, async (res) => {
@@ -116,6 +121,7 @@ async function add_listeners() {
 		})
 }
 async function discover_devices() {
+	log && console.error("DISCOVERING DEVICES")
 	let message = setInterval(
 		function () {
 			rheos.discovery++;
@@ -157,12 +163,18 @@ async function discover_devices() {
 					resolve(discover_devices(err))
 				})
 				clearInterval(message)
+				rheos.discovry ++
 				resolve (discover_devices())
 			}
 	})
 }
 async function create_root_xml() {
-	const app = await (choose_binary())
+	log && console.error("CREATING ROOT XML")
+	const app = await (choose_binary()).catch(() =>{
+		console.error("⚠ BINARY NOT FOUND")
+		setTimeout(()=>{process.exit(0)},500)
+		}
+	)
 	return new Promise(async function (resolve,reject) {	
 		try {
 			rheos.mode = true
@@ -176,6 +188,7 @@ async function create_root_xml() {
 	})
 }
 async function start_heos(counter = 0) {
+	log && console.error("STARTING HEOS")
 	counter === 0 && console.log(system_info.toString())
 	const heos = [HeosApi.discoverAndConnect({timeout:10000,port:1255, address:ip.address()}),HeosApi.discoverAndConnect({timeout:10000,port:1256, address:ip.address()})]
 	try {
@@ -216,6 +229,7 @@ async function start_heos(counter = 0) {
 }
 
 async function get_players() {
+	log && console.error("GETTING PLAYERS")
 	if (!rheos_connection) {reject("AWAITING CONNECTION")}
 	return new Promise(function (resolve, reject) {
 		rheos_connection[0]
@@ -236,11 +250,12 @@ async function get_players() {
 	})
 }
 async function create_players() {
+	log && console.error("CREATING PLAYERS")
 	for await (const player of rheos_players.values()) {
 		if (!rheos.processes[player.pid] || rheos.processes[player.pid].killed) {
 			const name = player.name.replace(/\s/g, "")
 			await (fs.truncate('./UPnP/Profiles/' + name + '.log', 0).catch(() => { "Failed to clear log for " + player.name}))
-			const app = await (choose_binary()).catch(err => console.error("Failed to find binary",err))
+			const app = await (choose_binary(name)).catch(err => console.error("Failed to find binary",err))
 			rheos.processes[player.pid] = spawn(app, ['-b', ip.address(), '-Z', '-M', name,
 				'-x', './UPnP/Profiles/' + name + '.xml', 
 				'-p','./UPnP/Profiles/' + name + '.pid',
@@ -250,6 +265,7 @@ async function create_players() {
 	}
 }
 async function start_roon() {
+	log && console.error("STARTING ROON")
 	roon = await connect_roon().catch((err)=> {console.error("Failed to connect with ROON server",err)})
 	svc_status = new RoonApiStatus(roon)
 	svc_source_control = new RoonApiSourceControl(roon)
@@ -369,6 +385,7 @@ async function heos_command(commandGroup, command, attributes = {}, timer = 5000
 	}).catch((err)=> err)
 }
 async function build_devices() {
+	log && console.error("BUILDING DEVICES")
 	return new Promise(async function (resolve) {
 		let template, xml_template = {}
 		template = {
@@ -425,7 +442,7 @@ async function build_devices() {
 					}
 					let subtemplate = { "squeeze2upnp": { "common": template.squeeze2upnp.common, "device": [device] } }
 					xml_template = builder.buildObject(subtemplate)
-					await fs.writeFile("./UPnP/Profiles/" + (device.name[0].replace(/\s/g, "")) + ".xml", xml_template).catch(()=>{console.error("⚠ Failed to create template fo "+device.name[0])})
+					await fs.writeFile("./UPnP/Profiles/" + (device.name[0].replace(/\s/g, "")) + ".xml", xml_template).catch(()=>{console.error("⚠ Failed to create template for "+device.name[0])})
 				}
 				else {
 					delete result.squeeze2upnp.device[index]
@@ -452,33 +469,39 @@ async function start_listening() {
 	await heos_command("system", "prettify_json_response", { enable: "on" }).catch(err => console.error("⚠ Failed to set responses"))
 }
 
-async function choose_binary() {
+async function choose_binary(name) {
+	log && console.log("LOADING BINARY for",name, os.platform())
 	if (os.platform() == 'linux') {
 		if (os.arch() === 'arm'){
+			log && console.error("LOADING armv6")
 			await fs.chmod('./UPnP/Bin/RHEOS-armv6', 0o557)
 			return ('./UPnP/Bin/RHEOS-armv6')
 		} else if (os.arch() === 'arm64'){
 			await fs.chmod('./UPnP/Bin/RHEOS-arm', 0o557)
+			log && console.error("LOADING arm")
 			return('./UPnP/Bin/RHEOS-arm')
 		} else if (os.arch() === 'x64'){ 
+			log && console.error("LOADING x64")
 			await fs.chmod('./UPnP/Bin/RHEOS-x86-64', 0o557)
 			return('./UPnP/Bin/RHEOS-x86-64')
 		} else if (os.arch() === 'ia32'){
+			log && console.error("LOADING ia32")
 			await fs.chmod('./UPnP/Bin/RHEOS-x86', 0o557)
 			return('./UPnP/Bin/RHEOS-x86')
 		}
 	}
 	else if (os.platform() == 'win32') {
+		log && console.error("LOADING win32")
 		return('./UPnP/Bin/RHEOS-upnp.exe')
 	} 
 	else if (os.platform() == 'darwin') {
-		console.log("ATTEMPTING LOADING MAC OS")
+		log && console.error("ATTEMPTING LOADING MAC OS")
 		try {
 			await fs.chmod('./UPnP/Bin/RHEOS-macos-x86_64', 0o557)
-			console.log("LOADING MAC BINARIES")
+			log && console.error("LOADING MAC BINARIES x86_64")
 			return('./UPnP/Bin/RHEOS-macos-x86_64')} 
 		catch {
-          	console.error("UNABLE TO LOAD MAC BINARIES- ABORTING")
+          	console.error("UNABLE TO LOAD MAC BINARIES - ABORTING")
 		  	process.exit(0)
 		}
 	}
@@ -507,7 +530,7 @@ async function group_enqueue(group) {
 		} else {
 			queue_array.push({ group, resolve, reject })
 		}
-		group_dequeue().catch((err)=>{console.log("Deque error",err)})
+		group_dequeue().catch((err)=>{log && console.error("Deque error",err)})
 	})
 }	
 async function group_dequeue(timer = 30000) {
