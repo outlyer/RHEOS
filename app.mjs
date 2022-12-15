@@ -144,7 +144,7 @@ async function discover_devices() {
 	return new Promise(async function (resolve, reject) {
 		const players = ([...rheos_players.values()].map(player => player.name))
 			try {
-					await fs.access('./UPnP/Profiles/config.xml')
+				    await fs.access('./UPnP/Profiles/config.xml')
 					let data = await fs.readFile('./UPnP/Profiles/config.xml', 'utf8')
 					const slim_devices = await parseStringPromise(data)
 					const devices = slim_devices.squeeze2upnp.device.map(d => d.friendly_name[0])
@@ -157,6 +157,7 @@ async function discover_devices() {
 					throw error
 				}
 			} catch {
+				console.log("UNABLE TO LOCATE CONFIG FILE")
 				let f = await fs.open('./UPnP/Profiles/config.xml','w+')
 				await f.close()
 				await create_root_xml().catch(err => {
@@ -177,8 +178,9 @@ async function create_root_xml() {
 	)
 	return new Promise(async function (resolve,reject) {	
 		try {
+			log && console.log("CREATING CONFIG FILE")
 			rheos.mode = true
-			await fs.chmod('./UPnP/Profiles/config.xml', 0o557)
+			await fs.chmod('./UPnP/Profiles/config.xml', 0o777)
 			await execFileSync(app, ['-i', './UPnP/Profiles/config.xml', '-b', my_settings.host_ip || ip.address()])
 			rheos.mode = false
 			resolve()
@@ -476,19 +478,19 @@ async function choose_binary(name) {
 		try {
 					if (os.arch() === 'arm'){
 			log && console.error("LOADING armv6")
-			await fs.chmod('./UPnP/Bin/RHEOS-armv6', 0o557)
+			await fs.chmod('./UPnP/Bin/RHEOS-armv6', 0o777)
 			return ('./UPnP/Bin/RHEOS-armv6')
 		} else if (os.arch() === 'arm64'){
-			await fs.chmod('./UPnP/Bin/RHEOS-arm', 0o557)
+			await fs.chmod('./UPnP/Bin/RHEOS-arm', 0o777)
 			log && console.error("LOADING arm")
 			return('./UPnP/Bin/RHEOS-arm')
 		} else if (os.arch() === 'x64'){ 
 			log && console.error("LOADING x64")
-			await fs.chmod('./UPnP/Bin/RHEOS-x86-64', 0o557)
+			await fs.chmod('./UPnP/Bin/RHEOS-x86-64', 0o777)
 			return('./UPnP/Bin/RHEOS-x86-64')
 		} else if (os.arch() === 'ia32'){
 			log && console.error("LOADING ia32")
-			await fs.chmod('./UPnP/Bin/RHEOS-x86', 0o557)
+			await fs.chmod('./UPnP/Bin/RHEOS-x86', 0o777)
 			return('./UPnP/Bin/RHEOS-x86')
 		}
 		} catch {
@@ -505,7 +507,7 @@ async function choose_binary(name) {
 	else if (os.platform() == 'darwin') {
 		log && console.error("ATTEMPTING LOADING MAC OS")
 		try {
-			await fs.chmod('./UPnP/Bin/RHEOS-macos-x86_64-static', 0o557)
+			await fs.chmod('./UPnP/Bin/RHEOS-macos-x86_64-static', 0o777)
 			log && console.error("LOADING MAC BINARIES x86_64")
 			return('./UPnP/Bin/RHEOS-macos-x86_64-static')} 
 		catch {
