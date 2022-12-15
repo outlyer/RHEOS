@@ -1,6 +1,6 @@
 {
     "settings": {
-        "host_ip": " ",
+        "host_ip": "",
         "streambuf_size": 524288,
         "output_size": 8388608,
         "stream_length": -3,

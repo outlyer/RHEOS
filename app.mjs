@@ -170,7 +170,7 @@ async function discover_devices() {
 }
 async function create_root_xml() {
 	log && console.error("CREATING ROOT XML")
-	const app = await (choose_binary()).catch(() =>{
+	const app = await (choose_binary("SYSTEM")).catch(() =>{
 		console.error("⚠ BINARY NOT FOUND")
 		setTimeout(()=>{process.exit(0)},500)
 		}
@@ -178,7 +178,8 @@ async function create_root_xml() {
 	return new Promise(async function (resolve,reject) {	
 		try {
 			rheos.mode = true
-			await execFileSync(app, ['-i', './UPnP/Profiles/config.xml', '-b', ip.address()])
+			await fs.chmod('./UPnP/Profiles/config.xml', 0o557)
+			await execFileSync(app, ['-i', './UPnP/Profiles/config.xml', '-b', my_settings.host_ip || ip.address()])
 			rheos.mode = false
 			resolve()
 		} 
@@ -256,7 +257,7 @@ async function create_players() {
 			const name = player.name.replace(/\s/g, "")
 			await (fs.truncate('./UPnP/Profiles/' + name + '.log', 0).catch(() => { "Failed to clear log for " + player.name}))
 			const app = await (choose_binary(name)).catch(err => console.error("Failed to find binary",err))
-			rheos.processes[player.pid] = spawn(app, ['-b', ip.address(), '-Z', '-M', name,
+			rheos.processes[player.pid] = spawn(app, ['-b', my_settings.host_ip || ip.address(), '-Z', '-M', name,
 				'-x', './UPnP/Profiles/' + name + '.xml', 
 				'-p','./UPnP/Profiles/' + name + '.pid',
 				'-f', './UPnP/Profiles/' + name + '.log'],
@@ -472,7 +473,8 @@ async function start_listening() {
 async function choose_binary(name) {
 	log && console.log("LOADING BINARY for",name, os.platform())
 	if (os.platform() == 'linux') {
-		if (os.arch() === 'arm'){
+		try {
+					if (os.arch() === 'arm'){
 			log && console.error("LOADING armv6")
 			await fs.chmod('./UPnP/Bin/RHEOS-armv6', 0o557)
 			return ('./UPnP/Bin/RHEOS-armv6')
@@ -489,6 +491,12 @@ async function choose_binary(name) {
 			await fs.chmod('./UPnP/Bin/RHEOS-x86', 0o557)
 			return('./UPnP/Bin/RHEOS-x86')
 		}
+		} catch {
+			console.error("UNABLE TO LOAD MAC BINARIES - ABORTING")
+			process.exit(0)
+
+		}
+
 	}
 	else if (os.platform() == 'win32') {
 		log && console.error("LOADING win32")
@@ -497,9 +505,9 @@ async function choose_binary(name) {
 	else if (os.platform() == 'darwin') {
 		log && console.error("ATTEMPTING LOADING MAC OS")
 		try {
-			await fs.chmod('./UPnP/Bin/RHEOS-macos-x86_64', 0o557)
+			await fs.chmod('./UPnP/Bin/RHEOS-macos-x86_64-static', 0o557)
 			log && console.error("LOADING MAC BINARIES x86_64")
-			return('./UPnP/Bin/RHEOS-macos-x86_64')} 
+			return('./UPnP/Bin/RHEOS-macos-x86_64-static')} 
 		catch {
           	console.error("UNABLE TO LOAD MAC BINARIES - ABORTING")
 		  	process.exit(0)
