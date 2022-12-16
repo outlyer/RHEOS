@@ -144,7 +144,6 @@ async function discover_devices() {
 	return new Promise(async function (resolve, reject) {
 		const players = ([...rheos_players.values()].map(player => player.name))
 			try {
-				    await fs.access('./UPnP/Profiles/config.xml')
 					let data = await fs.readFile('./UPnP/Profiles/config.xml', 'utf8')
 					const slim_devices = await parseStringPromise(data)
 					const devices = slim_devices.squeeze2upnp.device.map(d => d.friendly_name[0])
@@ -157,9 +156,7 @@ async function discover_devices() {
 					throw error
 				}
 			} catch {
-				console.log("UNABLE TO LOCATE CONFIG FILE")
-				let f = await fs.open('./UPnP/Profiles/config.xml','w+')
-				await f.close()
+				log && console.log("UNABLE TO LOCATE CONFIG FILE")
 				await create_root_xml().catch(err => {
 					resolve(discover_devices(err))
 				})
@@ -180,7 +177,6 @@ async function create_root_xml() {
 		try {
 			log && console.log("CREATING CONFIG FILE")
 			rheos.mode = true
-			await fs.chmod('./UPnP/Profiles/config.xml', 0o777)
 			await execFileSync(app, ['-i', './UPnP/Profiles/config.xml', '-b', my_settings.host_ip || ip.address()])
 			rheos.mode = false
 			resolve()
