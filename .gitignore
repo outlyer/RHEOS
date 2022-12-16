@@ -1,9 +1,4 @@
 config.json
 UPnP/common.log
 UPnP/Profiles/*.*
-<<<<<<< HEAD
-UPnP/Profiles/config.xml
-=======
-
-
->>>>>>> a0bee5f9189543613bc406ede680ed49bd021123
+!UPnP/Profiles/config.xml

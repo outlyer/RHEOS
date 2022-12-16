@@ -474,19 +474,19 @@ async function choose_binary(name) {
 		try {
 					if (os.arch() === 'arm'){
 			log && console.error("LOADING armv6")
-			await fs.chmod('./UPnP/Bin/RHEOS-armv6', 0o755)
+			await fs.chmod('./UPnP/Bin/RHEOS-armv6', 0o111)
 			return ('./UPnP/Bin/RHEOS-armv6')
 		} else if (os.arch() === 'arm64'){
-			await fs.chmod('./UPnP/Bin/RHEOS-arm', 0o755)
+			await fs.chmod('./UPnP/Bin/RHEOS-arm', 0o111)
 			log && console.error("LOADING arm")
 			return('./UPnP/Bin/RHEOS-arm')
 		} else if (os.arch() === 'x64'){ 
 			log && console.error("LOADING x64")
-			await fs.chmod('./UPnP/Bin/RHEOS-x86-64', 0o755)
+			await fs.chmod('./UPnP/Bin/RHEOS-x86-64', 0o111)
 			return('./UPnP/Bin/RHEOS-x86-64')
 		} else if (os.arch() === 'ia32'){
 			log && console.error("LOADING ia32")
-			await fs.chmod('./UPnP/Bin/RHEOS-x86', 0o755)
+			await fs.chmod('./UPnP/Bin/RHEOS-x86', 0o111)
 			return('./UPnP/Bin/RHEOS-x86')
 		}
 		} catch {
@@ -503,7 +503,7 @@ async function choose_binary(name) {
 	else if (os.platform() == 'darwin') {
 		log && console.error("ATTEMPTING LOADING MAC OS")
 		try {
-			await fs.chmod('./UPnP/Bin/RHEOS-macos-x86_64-static', 0o755)
+			await fs.chmod('./UPnP/Bin/RHEOS-macos-x86_64-static', 0o111)
 			log && console.error("LOADING MAC BINARIES x86_64")
 			return('./UPnP/Bin/RHEOS-macos-x86_64-static')} 
 		catch {
