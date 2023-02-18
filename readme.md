@@ -1,4 +1,5 @@
-﻿# RHEOS
+﻿etehrnet switch with rear ports
+# RHEOS
 
 
 A ROON Extension to allow  control of Denon/Marantz HEOS devices from ROON.
