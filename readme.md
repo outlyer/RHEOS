@@ -66,11 +66,11 @@ Under RHEOS UPnP Settings there are options to select buffer-size, output-size, 
 
 The HEOS players can be controlled as a normal ROON endpoint. Grouping is done through standard ROON grouping but behind the scenes these are translated to HEOS groups and you will see the change appear in the HEOS app.
 
+Individaul and  fixed group players can have their volume changed and be muted (either in ROON or the Heos app).
+
 ### Known Limitations
 
-Individaully grouped players can have their volume changed and be muted (either in ROON or the Heos app).
 
-Group volume control of all devices in a group is not possible from ROON .
 
 Pausing a device from Roon and then re-starting from HEOS will result in an error message (in HEOS) and returning to the start of the track.
 
@@ -80,7 +80,6 @@ Devices will show "Streaming from LMS" on their display and in the HEOS app.
 
 Cover art and metadata are not shown on the HEOS app or on the playback device.
 
-Track progress on HEOS device and app does not show a track duration and resets after pause.
 
 
 #### Please report any issues via GitHub or raise on the ROON communuty site.
