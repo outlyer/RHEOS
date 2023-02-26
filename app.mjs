@@ -30,7 +30,7 @@ init_signal_handlers()
 start_up()
 
 async function start_up(){
-    console.error("STARTING UP")
+    console.error("STARTING UP - WINDOWS")
 	await Promise.all([start_heos().catch(err => console.error(err)), start_roon().catch(err => console.error(err))]).then(()=> {rheos.mode = false})
 	await discover_devices().catch(err => {throw error(err)})
     await build_devices().catch(err => console.error("⚠ Error Building Devices",err => {throw error(err)}))
@@ -276,8 +276,12 @@ async function create_fixed_group(group) {
 	const hex = Math.abs(get_heos_group_value(group.players.map(p => p.pid))).toString(16);
     const name = group.name
 	const mac = "bb:bb:bb:"+ hex.replace(/..\B/g, '$&:').slice(1,7)
-	rheos.processes[hex] = spawn('./UPnP/Bin/squeezelite/squeezelite',["-M",name,"-m", mac])
-    return 
+
+
+	rheos.processes[hex] = spawn('./UPnP/Bin/squeezelite/squeezelite-x64.exe',["-M",name,"-m", mac,"-e","default"])
+    
+	
+	return 
 }
 async function remove_fixed_group(group) {
 		const pid= Number(rheos.processes[group]?.pid)
@@ -329,17 +333,13 @@ async function start_roon() {
 }
 async function update_outputs(outputs){
 	return new Promise(async function (resolve) {
-    let player
+    let player,group
 	for (const op of outputs) {	
 		rheos_outputs.set(op.output_id,op)
 		if (op.source_controls && (player = get_player(op?.source_controls[0]?.display_name))){
-			player.output = op.output_id
 			await update_volume(op,get_player(op?.source_controls[0]?.display_name))	
-		} else if (op.source_controls ){
-         	const group = [...fixed_groups.values()].find(fg => fg.name == op?.source_controls[0]?.display_name)?.gid
-		 if (group){
-			await update_group_volume(op,rheos_groups.get(group))
-		 }
+		} else if (op.source_controls  &&    (group = rheos_groups.get(get_pid(rheos_zones.get(op.zone_id)?.outputs[0].source_controls[0].display_name)))){
+			await update_group_volume(op,group)
 		}
 	}
 	resolve()
@@ -457,7 +457,7 @@ async function build_devices() {
 						"codecs": ["aac,ogg,flc,alc,pcm,mp3"],
 						"forced_mimetypes": ["audio/mpeg,audio/vnd.dlna.adts,audio/mp4,audio/x-ms-wma,application/ogg,audio/x-flac"],
 						"mode": [("flc:0,r:-48000,s:16").toString().concat(my_settings.flow ? ",flow" : "")],
-						"mode": ["thru"],
+						//"mode": ["thru"],
 						"raw_audio_format": ["raw,wav,aif"],
 						"sample_rate": ['48000'],
 						"L24_format": ['2'],
@@ -554,8 +554,8 @@ async function choose_binary(name) {
 
 	}
 	else if (os.platform() == 'win32') {
-		log && console.error("LOADING win32")
-		return('./UPnP/Bin/RHEOS-upnp.exe')
+		log && console.error(" LOADING WINDOWS EXE")
+		return('./UPnP/Bin/RHEOS2UPNP.exe')
 	} 
 	else if (os.platform() == 'darwin') {
 		log && console.error("ATTEMPTING LOADING MAC OS")
@@ -581,7 +581,7 @@ async function group_enqueue(group) {
 	return new Promise(async (resolve, reject) => {
 		if (queue_array.length){
         	for (let queued_group of queue_array){
- 				let checkSubset = (group,queued_group) => {return group.every((player) => {return queued_group.includes(player)})}
+ 				let checkSubset = (group) => {return group.every((player) => {return queued_group.includes(player)})}
 				if (checkSubset){
 					resolve()
 				} else {
@@ -648,7 +648,7 @@ async function connect_roon() {
 	const roon = new RoonApi({
 		extension_id: "com.RHeos.beta",
 		display_name: "Rheos",
-		display_version: "0.6.1-0",
+		display_version: "0.6.1-1",
 		publisher: "RHEOS",
 		email: "rheos.control@gmail.com",
 		website: "https:/github.com/LINVALE/RHEOS",
