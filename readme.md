@@ -1,4 +1,4 @@
-﻿etehrnet switch with rear ports
+
 # RHEOS
 
 
@@ -9,13 +9,14 @@ A ROON Extension to allow  control of Denon/Marantz HEOS devices from ROON.
 -   🔎 Automatic discovery of HEOS devices and make them available as ROON audio devices (via UPnP).
 -   🎯 Bi-directional Control of player play, pause, previous, volume, mute and grouping within HEOS players from ROON or Heos App.
 -   🎶 Group HEOS devices from ROON. Uses HEOS grouping to ensure synchronization with other HEOS players. Only groups HEOS players.
+-   🔗 Create fixed groups for ROON outputs. Allowsvolume  control of all grouped players from ROON interface using single control
 -   🔊 Does not use AirPlay so can stream at Hi-Resolution for HS2 players.
 -   🚫 Written in pure Javascript / Nodejs with limited module dependencies (heos-api, squeeze2UPnP, Xml2js,ip)
 
 
 ## Installation
 
-Install/Update nodejs for your system (tested on Windows, Ubuntu 22.04.1 LTS, and Raspberry pi 4) . This requires at least Node v16, the current stable version. [https://nodejs.org/en/download/]
+Install/Update nodejs for your system (tested on Windows, Ubuntu 22.04.1 LTS, and Raspberry pi 4) . This requires at least Node v16.0. [https://nodejs.org/en/download/]
 
 The simplest way to install this is using the roon-extension-manager https://github.com/TheAppgineer/roon-extension-manager 
 Tested with a raspberry pi3 (Ubuntu 32 bit), pi 4(3Ubuntu 2 and 64bit) and NUC (Ubuntu 22.04.1 LTS amd64)
@@ -66,6 +67,14 @@ Under RHEOS UPnP Settings there are options to select buffer-size, output-size, 
 
 The HEOS players can be controlled as a normal ROON endpoint. Grouping is done through standard ROON grouping but behind the scenes these are translated to HEOS groups and you will see the change appear in the HEOS app.
 
+Fixed groups can be created from any group created using ROON or HEOS. To create a fixed grouop that is automatically regenerated when a fixed group output is played go to settings -> groups 
+All present ROON/HEOS groups will be listed - and shown initially as variable. 
+To have as a fixed group select from the drop down and this will be created. 
+If a fixed group with the same players has been previously created (even with a different lead player or order of players) it will appear as a new ROON output.
+Selecting play will group the HEos players and start play back. Pause will ungroup and stop playback. 
+If the group has never been created bfore it needs to be enabled in ROON using Settings -> Audio -> Squeezebox where the group will appear with the HEOS group name. 
+This can be edited as needed in ROON and enabled or disabled as needed. On playing the group will be identified as a ROON group i.e. "player" + x and the chisen name will appear as the last player in the group with a cvolume control that will controll all other players in the group (as presently in the HEOS control app).
+
 Individaul and  fixed group players can have their volume changed and be muted (either in ROON or the Heos app).
 
 ### Known Limitations
@@ -79,6 +88,7 @@ Skipping to next track in ROON playlist is not possible from HEOS.
 Devices will show "Streaming from LMS" on their display and in the HEOS app.
 
 Cover art and metadata are not shown on the HEOS app or on the playback device.
+Windows firewalls can cause some issues. If a HEOS device is found and selected but doesnt play even a when CD resolution is selected take a look at the firewall. Allow two specific executable files to be passed throu ./ROON/UPnP/Bin/RHEOS2UPnP and ./ROON/UPnP/Bin/Squeezelite/
 
 
 
