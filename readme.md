@@ -9,7 +9,7 @@ A ROON Extension to allow  control of Denon/Marantz HEOS devices from ROON.
 -   🔎 Automatic discovery of HEOS devices and make them available as ROON audio devices (via UPnP).
 -   🎯 Bi-directional Control of player play, pause, previous, volume, mute and grouping within HEOS players from ROON or Heos App.
 -   🎶 Group HEOS devices from ROON. Uses HEOS grouping to ensure synchronization with other HEOS players. Only groups HEOS players.
--   🔗 Create fixed groups for ROON outputs. Allowsvolume  control of all grouped players from ROON interface using single control
+-   🔗 Create fixed groups for ROON outputs. Allows volume  control of all grouped players from ROON interface using single control.
 -   🔊 Does not use AirPlay so can stream at Hi-Resolution for HS2 players.
 -   🚫 Written in pure Javascript / Nodejs with limited module dependencies (heos-api, squeeze2UPnP, Xml2js,ip)
 
