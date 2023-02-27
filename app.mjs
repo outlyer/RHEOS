@@ -276,11 +276,7 @@ async function create_fixed_group(group) {
 	const hex = Math.abs(get_heos_group_value(group.players.map(p => p.pid))).toString(16);
     const name = group.name
 	const mac = "bb:bb:bb:"+ hex.replace(/..\B/g, '$&:').slice(1,7)
-
-
 	rheos.processes[hex] = spawn('./UPnP/Bin/squeezelite/squeezelite-x64.exe',["-M",name,"-m", mac,"-e","default"])
-    
-	
 	return 
 }
 async function remove_fixed_group(group) {
@@ -620,9 +616,7 @@ async function group_dequeue(timer = 30000) {
 	return
 }
 async function update_heos_groups() {
-
 	return new Promise(async function (resolve) {
-
 		let old_groups = [...rheos_groups.keys()]
 		rheos_groups.clear()
 		const res = await heos_command("group", "get_groups",3000).catch(err => console.error(err))
@@ -752,7 +746,7 @@ function makelayout(my_settings) {
 	}
 	
 	let _fixed_groups = { type: "group", title: "GROUPS", subtitle: " ", collapsable: true, items: [] };
-		    _fixed_groups.items.push({title:"Fxed Group Start Delay",type:"dropdown",values:[
+		    _fixed_groups.items.push({title:"Fixed Group Start Delay",type:"dropdown",values:[
 				{title: "MIN",value : 1000},
 				{title: '+', value : 2000},
 				{title: '++',value : 3000},
