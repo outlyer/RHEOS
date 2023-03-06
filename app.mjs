@@ -242,17 +242,21 @@ async function get_players() {
 	})
 }
 async function create_player(pid) {
-	let player = rheos_players.get(pid)
-	log && console.error("CREATING PLAYER",rheos_players.get(pid.name))
+	
 		if (!rheos.processes[pid] || rheos.processes[pid].killed) {
+			const player = rheos_players.get(pid)
 			const name = player.name.replace(/\s/g, "")
-			await (fs.truncate('./UPnP/Profiles/' + name + '.log', 0).catch(err => { console.error("Failed to clear log for " + player.name, err)}))
+			log && console.log("CREATING BINARY FOR",player.name)
+			await (fs.truncate('./UPnP/Profiles/' + name + '.log', 0).catch(err => { log && console.error("Failed to clear log for " + player.name)}))
 			const app = await (choose_binary(name)).catch(err => console.error("Failed to find binary",err))
 			rheos.processes[player.pid] = spawn(app, ['-b', my_settings.host_ip || ip.address(), '-Z', '-M', name,
 				'-x', './UPnP/Profiles/' + name + '.xml', 
 				'-p','./UPnP/Profiles/' + name + '.pid',
 				'-f', './UPnP/Profiles/' + name + '.log'],
 					{ stdio: 'ignore' })
+		} else {
+
+			console.log(rheos.processes[pid])
 		}
 	return 
 }
@@ -549,7 +553,7 @@ async function choose_binary(name) {
 
 	}
 	else if (os.platform() == 'win32') {
-		log && console.error(" LOADING WINDOWS EXE")
+		log && console.error("LOADING WINDOWS EXE")
 		return('./UPnP/Bin/RHEOS2UPNP.exe')
 	} 
 	else if (os.platform() == 'darwin') {
@@ -641,7 +645,7 @@ async function connect_roon() {
 	const roon = new RoonApi({
 		extension_id: "com.RHeos.beta",
 		display_name: "Rheos",
-		display_version: "0.6.1-2",
+		display_version: "0.6.1-3",
 		publisher: "RHEOS",
 		email: "rheos.control@gmail.com",
 		website: "https:/github.com/LINVALE/RHEOS",
