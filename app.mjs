@@ -15,7 +15,7 @@ var roon, svc_status, my_settings, svc_transport, rheos_connection, my_players, 
 const fixed_groups = new Map()
 const all_groups = new Map()
 const system_info = [ip.address(), os.type(), os.hostname(), os.platform(), os.arch()]
-const rheos = { processes: {}, mode: true, discovery: 0, working: false}
+const rheos = { processes: {}, mode: false, discovery: 0, working: false}
 const start_time = new Date()
 const queue_array = []
 const execFileSync = util.promisify(child.execFile);
@@ -30,11 +30,12 @@ init_signal_handlers()
 start_up()
 
 async function start_up(){
-    console.error("STARTING UP - WINDOWS")
-	await Promise.all([start_heos().catch(err => console.error(err)), start_roon().catch(err => console.error(err))]).then(()=> {rheos.mode = false})
+    console.log(system_info.toString())
+	await start_roon().catch(err => console.error(err))
+	await start_heos().catch(err => console.error(err))
 	await discover_devices().catch(err => {throw error(err)})
     await build_devices().catch(err => console.error("⚠ Error Building Devices",err => {throw error(err)}))
-	await create_players().catch(err => console.error("⚠ Error Creating Players",err => {throw error(err)}))
+	//await create_players().catch(err => console.error("⚠ Error Creating Players",err => {throw error(err)}))
 	await add_listeners().catch(err => console.error("⚠ Error Adding Listeners",err => {throw error(err)}))
 	await load_fixed_groups().catch(err => console.error("⚠ Error Loading Fixed Groups",err => {throw error(err)}))
 	setTimeout(() => {start_listening().catch(err => console.error("⚠ Error Starting Listening",err => {throw error(err)}))},10000)
@@ -42,7 +43,7 @@ async function start_up(){
 async function monitor() {
 	setInterval(async () => {
 		heos_command("system", "heart_beat", {}).catch(err => console.error("⚠  HEARTBEAT MISSED", err))
-		update_status()
+		update_status(false)
 	}, 5000)
 	return
 }
@@ -56,12 +57,6 @@ async function add_listeners() {
 		.onClose(async (hadError) => {
 			console.error("⚠ Listeners closed", hadError)
 			await start_up().catch(err => { console.error(err) })
-			await discover_devices().catch(err => { console.error(err,"ERROR DISCOVERING DEVICES");process.exit(0) })
-			await build_devices().catch(err => console.error(err))
-			await create_players().catch(err => console.error(err))
-			await add_listeners().catch(err => console.error(err))
-			await start_listening().catch(err => console.error(err))
-			rheos.mode = false
 		})
 		.onError((err) => console.error("⚠ HEOS REPORTS ERROR", err))
 		.on({ commandGroup: "event", command: "groups_changed" }, async (res) => {
@@ -122,7 +117,7 @@ async function add_listeners() {
 		})
 }
 async function discover_devices() {
-	log && console.error("DISCOVERING DEVICES")
+	log && console.log("DISCOVERING DEVICES")
 	let message = setInterval(
 		function () {
 			rheos.discovery++;
@@ -138,22 +133,31 @@ async function discover_devices() {
 					process.exit(0)	
 				}		
 			} else {
-				update_status()
+				rheos.mode = true
+				update_status(false)
 			}
 		}, 1000
 	)
 	return new Promise(async function (resolve, reject) {
-		const players = ([...rheos_players.values()].map(player => player.name))
+		//const players = ([...rheos_players.values()].map(player => player.name))
+		let p = await get_players()
+		const players = p.map(p => p.name)
 			try {
 					let data = await fs.readFile('./UPnP/Profiles/config.xml', 'utf8')
+				
 					const slim_devices = await parseStringPromise(data)
 					const devices = slim_devices.squeeze2upnp.device.map(d => d.friendly_name[0])
+					log && console.log("DEVICES",devices,"PLAYERS",players)
             	if (players.every((player) => {return devices.includes(player)})){	
 					clearInterval(message)
 					await monitor()
 					rheos.discovery=0
+					//console.log('MATCHED PLAYERS')
+					rheos.mode = false
+					update_status(false)
 					resolve(data)
 				} else {
+					console.log("DIFFERENT PLAYERS")
 					throw error
 				}
 			} catch {
@@ -162,8 +166,8 @@ async function discover_devices() {
 					resolve(discover_devices(err))
 				})
 				clearInterval(message)
-				rheos.discovry ++
-				resolve (discover_devices())
+				rheos.discovery ++
+				resolve ()
 			}
 	})
 }
@@ -179,7 +183,6 @@ async function create_root_xml() {
 			log && console.error("CREATING CONFIG FILE")
 			rheos.mode = true
 			await execFileSync(app, ['-i', './UPnP/Profiles/config.xml', '-b', my_settings.host_ip || ip.address()])
-			rheos.mode = false
 			resolve()
 		} 
 		catch (err) {
@@ -188,26 +191,17 @@ async function create_root_xml() {
 	})
 }
 async function start_heos(counter = 0) {
-	log && console.error("STARTING HEOS")
-	counter === 0 && console.log(system_info.toString())
-	const heos = [HeosApi.discoverAndConnect({timeout:10000,port:1255, address:ip.address()}),HeosApi.discoverAndConnect({timeout:10000,port:1256, address:ip.address()})]
-	if (rheos_connection){return}
+	log && console.log("STARTING HEOS")
+	rheos_connection = await  Promise.all([HeosApi.discoverAndConnect({timeout:10000,port:1255, address:ip.address()}),HeosApi.discoverAndConnect({timeout:10000,port:1256, address:ip.address()})])
 	try {
-		rheos_connection = await Promise.all(heos).catch(()=>{console.error("⚠ Heos Connection failed")})
 		rheos_connection[0].socket.setMaxListeners(32)
 		rheos_connection[1].socket.setMaxListeners(32)
-		my_players = roon.load_config("players") || []
 		const players = await get_players().catch(()=>{console.error("⚠ Unable to discover Heos Players")})
-		const groups = await heos_command("group", "get_groups",30000).catch(err => console.error(err))
-		const old_p = sum_array(my_players.map(x => x.pid))
-		const new_p = sum_array(players.map(x => x.pid))
-		my_players.players = players
 		roon.save_config("players",players)	
-		players.forEach((player )=> { my_settings[player.name] ||(my_settings[player.name] = "CD")})
-		if (new_p>0 && (old_p === new_p)){
 			for (let player of players) {
 				player.resolution = my_settings[player.name] || 'CD'
 				rheos_players.set(player.pid, player)
+				log && console.log("PLAYER SET",player.name)
 			}
 			players.sort((a, b) => {
 					let fa = a.network == "wired" ? 0 : 1
@@ -216,19 +210,18 @@ async function start_heos(counter = 0) {
 			})
 			console.table([...rheos_players.values()], ["name", "pid", "model", "ip", "resolution"])
 			await update_heos_groups().catch(err => console.error(err))
-		} else {
-		    throw error
-		}
-		
-		return (heos)		
+			return 			
 	}
 	catch (err) {
+		if (rheos.mode){
 		update_status( "⚠ SEARCHING FOR NEW HEOS PLAYERS",false)
 		setTimeout(() => {start_heos(++counter)}, 1000)
+		}
 	}
+
 }
 async function get_players() {
-	log && console.error("GETTING PLAYERS")
+	log && console.log("GETTING PLAYERS")
 	if (!rheos_connection) {reject("AWAITING CONNECTION")}
 	return new Promise(function (resolve, reject) {
 		rheos_connection[0]
@@ -248,12 +241,12 @@ async function get_players() {
 		})
 	})
 }
-async function create_players() {
-	log && console.error("CREATING PLAYERS")
-	for await (const player of rheos_players.values()) {
-		if (!rheos.processes[player.pid] || rheos.processes[player.pid].killed) {
+async function create_player(pid) {
+	let player = rheos_players.get(pid)
+	log && console.error("CREATING PLAYER",rheos_players.get(pid.name))
+		if (!rheos.processes[pid] || rheos.processes[pid].killed) {
 			const name = player.name.replace(/\s/g, "")
-			await (fs.truncate('./UPnP/Profiles/' + name + '.log', 0).catch(() => { "Failed to clear log for " + player.name}))
+			await (fs.truncate('./UPnP/Profiles/' + name + '.log', 0).catch(err => { console.error("Failed to clear log for " + player.name, err)}))
 			const app = await (choose_binary(name)).catch(err => console.error("Failed to find binary",err))
 			rheos.processes[player.pid] = spawn(app, ['-b', my_settings.host_ip || ip.address(), '-Z', '-M', name,
 				'-x', './UPnP/Profiles/' + name + '.xml', 
@@ -261,7 +254,6 @@ async function create_players() {
 				'-f', './UPnP/Profiles/' + name + '.log'],
 					{ stdio: 'ignore' })
 		}
-	}
 	return 
 }
 async function load_fixed_groups(){
@@ -348,7 +340,7 @@ async function update_zones(zones){
 		if (z.outputs){
 			let last_el = z.outputs.flatMap(output => output.source_controls).flatMap(control => control.display_name).slice(-1)
 			let fixed = [...fixed_groups.values()].find(group => last_el == group.name)?.players.map(player => rheos_players.get(player.pid)?.output).filter (o => o)
-			const lead_player_pid = get_pid(z.outputs[0]?.source_controls[0]?.display_name)
+			//const lead_player_pid = get_pid(z.outputs[0]?.source_controls[0]?.display_name)
 			rheos_zones.set(z.zone_id, z)	
 			if (fixed){
 				const op = z.outputs[z.outputs.length-1]
@@ -439,7 +431,7 @@ async function heos_command(commandGroup, command, attributes = {}, timer = 5000
 	}).catch((err)=> err)
 }
 async function build_devices() {
-	log && console.error("BUILDING DEVICES")
+	log && console.log("BUILDING DEVICES")
 	return new Promise(async function (resolve) {
 		let template, xml_template = {}
 		template = {
@@ -475,8 +467,12 @@ async function build_devices() {
 		let data = await (fs.readFile('./UPnP/Profiles/config.xml', 'utf8'))
 		xml2js.parseString(data, async (err, result) => {
 			if (err) { throw err }
-			if (!result?.squeeze2upnp?.device?.entries()) {return}
+			if (!result?.squeeze2upnp?.device?.entries()) {
+				console.error("NO DEVICE ENTRIES")
+				return
+			}
 			for await (const [index, device] of result?.squeeze2upnp?.device?.entries()) {
+				log && console.log("Building",device.name)
 				const pid = get_pid(device.name[0])
 				if (pid) {
 					if (my_settings[(device.name[0])] == "HR") {
@@ -497,6 +493,7 @@ async function build_devices() {
 					let subtemplate = { "squeeze2upnp": { "common": template.squeeze2upnp.common, "device": [device] } }
 					xml_template = builder.buildObject(subtemplate)
 					await fs.writeFile("./UPnP/Profiles/" + (device.name[0].replace(/\s/g, "")) + ".xml", xml_template).catch(()=>{console.error("⚠ Failed to create template for "+device.name[0])})
+				    create_player(pid)
 				}
 				else {
 					delete result.squeeze2upnp.device[index]
@@ -514,12 +511,14 @@ async function build_devices() {
 			result.squeeze2upnp.device = result.squeeze2upnp.device
 			xml_template = builder.buildObject(result)
 			await fs.writeFile("./UPnP/Profiles/config.xml", xml_template).catch(()=>{console.error("⚠ Failed to save config")})
+			rheos.mode = false
+			update_status()
 			resolve()
 		})
 	})
 }
 async function start_listening() {
-	update_status()
+	update_status(false)
 	await heos_command("system", "prettify_json_response", { enable: "on" }).catch(err => console.error("⚠ Failed to set responses"))
 }
 async function choose_binary(name) {
@@ -642,12 +641,13 @@ async function connect_roon() {
 	const roon = new RoonApi({
 		extension_id: "com.RHeos.beta",
 		display_name: "Rheos",
-		display_version: "0.6.1-1",
+		display_version: "0.6.1-2",
 		publisher: "RHEOS",
 		email: "rheos.control@gmail.com",
 		website: "https:/github.com/LINVALE/RHEOS",
 		log_level: "none",
 		core_paired: async function (core) {
+			log && console.log("ROON PAIRED")
 			clearInterval(timer)
 			svc_transport = core.services.RoonApiTransport
 			svc_transport.subscribe_outputs(async function (cmd, data) {	
@@ -670,9 +670,11 @@ async function connect_roon() {
 					case "Subscribed" : 
 						for (const z of data.zones) {
 							rheos_zones.set(z.zone_id, z)
+						    log && console.log("ZONE SUBSCRIBED",z.display_name)
 						}
 						break
 					case "Changed" : {	
+						Array.isArray(data.zones_added) && log && console.log("ZONES ADDED", data.zones_added.map( z=>z.display_name))
 						Array.isArray(data.zones_removed) && await update_zones(data.zones_removed);	
 						Array.isArray(data.zones_added) && await update_zones(data.zones_added);
 						Array.isArray(data.zones_changed) && await update_zones(data.zones_changed);
@@ -684,16 +686,25 @@ async function connect_roon() {
 			core = undefined
 		}
 	})
-	resolve (roon)
-	})
+	if (roon){
+	
+	resolve (roon)}
+	else{
+		console.error("NO ROON FOUND");
+		reject
+	}
+})
 }
 
-async function update_status(message = null,warning = false) {
+async function update_status(message = "",warning = false) {
+	
+	
 	let RheosStatus = rheos_players.size + " HEOS Players on " + system_info[2] +" "+ system_info [3]+" "+ system_info [4] + ' at ' + system_info[0] + '  for ' + get_elapsed_time(start_time) + '\n'
-	if (message){
-		svc_status.set_status(RheosStatus  + message, warning)
-	}else {
-	if (rheos.mode){
+    if (rheos.mode){
+	//if (message){
+	//	svc_status.set_status(RheosStatus, warning)
+	//}else {
+	
 		RheosStatus = RheosStatus + "_".repeat(120) + " \n \n " + (rheos.discovery > 0 ? ("⚠      UPnP CONNECTING       " + ("▓".repeat((rheos.discovery))+"░".repeat(30-rheos.discovery)))
 		: ("DISCOVERED " + rheos_players.size + " HEOS PLAYERS")) + "\n \n"
 		for (let player of rheos_players.values()) {
@@ -701,15 +712,16 @@ async function update_status(message = null,warning = false) {
 		let quality = (my_settings[player.name])
 		RheosStatus = RheosStatus + (rheos.discovery ? "◐◓◑◒".slice(rheos.discovery % 4, (rheos.discovery % 4) + 1) + " " : (quality === "HR")  ?"◉  " :"◎  " ) + name?.toUpperCase() + " \t " + model + "\t" + ip + "\n"
 		}
-		RheosStatus = RheosStatus + "_".repeat(120) + "\n \n"
+		RheosStatus = RheosStatus //+ "_".repeat(120) + "\n \n"
+	//}
 	}
 	for (let zone of [...rheos_zones.values()].filter(zone => zone.state == "playing")) {
 		RheosStatus = RheosStatus + "🎶  " + zone.display_name + "\t ▶ \t" + zone.now_playing.one_line.line1 + "\n"
 	}
-	rheos.mode && (RheosStatus = RheosStatus + "_".repeat(120))
-	svc_status.set_status(RheosStatus, warning)
-	}
-
+	//rheos.mode && (RheosStatus = RheosStatus)
+	
+	
+svc_status.set_status(RheosStatus, warning)
 }
 function makelayout(my_settings) {
 	const players = [...rheos_players.values()],
