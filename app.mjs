@@ -43,7 +43,7 @@ async function start_up(){
 async function monitor() {
 	setInterval(async () => {
 		heos_command("system", "heart_beat", {}).catch(err => console.error("⚠  HEARTBEAT MISSED", err))
-		update_status(false)
+		update_status("OK",false)
 	}, 5000)
 	return
 }
@@ -134,7 +134,7 @@ async function discover_devices() {
 				}		
 			} else {
 				rheos.mode = true
-				update_status(false)
+				update_status("DISCOVERING PLAYERS",false)
 			}
 		}, 1000
 	)
@@ -152,12 +152,12 @@ async function discover_devices() {
 					clearInterval(message)
 					await monitor()
 					rheos.discovery=0
-					//console.log('MATCHED PLAYERS')
 					rheos.mode = false
-					update_status(false)
+					
 					resolve(data)
 				} else {
 					console.log("DIFFERENT PLAYERS")
+					update_status("PLAYERS CHANGED",true)
 					throw error
 				}
 			} catch {
@@ -243,7 +243,9 @@ async function get_players() {
 }
 async function create_player(pid) {
 	
-		if (!rheos.processes[pid] || rheos.processes[pid].killed) {
+		if (rheos.processes[pid]) {
+			process.kill(Number(rheos.processes[pid].pid),9)
+		}
 			const player = rheos_players.get(pid)
 			const name = player.name.replace(/\s/g, "")
 			log && console.log("CREATING BINARY FOR",player.name)
@@ -254,11 +256,8 @@ async function create_player(pid) {
 				'-p','./UPnP/Profiles/' + name + '.pid',
 				'-f', './UPnP/Profiles/' + name + '.log'],
 					{ stdio: 'ignore' })
-		} else {
-
-			console.log(rheos.processes[pid])
-		}
-	return 
+		
+			return 
 }
 async function load_fixed_groups(){
 	[...fixed_groups.entries()].forEach( fg => {
@@ -301,7 +300,7 @@ async function start_roon() {
 				await HeosApi.connect(l.values.default_player_ip, 1000).catch(err => (l.has_error = err))
 			}
 			if (!isdryrun && !l.has_error) {
-				update_status()
+				update_status("SAVING",false)
 				for (let fg of all_groups){	
 						if (settings.values[fg[0]]){
 							fixed_groups.set(fg[0],fg[1])
@@ -481,7 +480,7 @@ async function build_devices() {
 				if (pid) {
 					if (my_settings[(device.name[0])] == "HR") {
 						device.enabled = ['1']
-						device.mode = ("flc:0,r:-192000,s:24").toString().concat(my_settings.flow ? ",flow" : "")
+						device.mode = ("flc:0,r:192000,s:24").toString().concat(my_settings.flow ? ",flow" : "")
 						device.sample_rate = ['192000']
 					} 
 					else if (my_settings[(device.name[0])] == "thru") {
@@ -516,13 +515,13 @@ async function build_devices() {
 			xml_template = builder.buildObject(result)
 			await fs.writeFile("./UPnP/Profiles/config.xml", xml_template).catch(()=>{console.error("⚠ Failed to save config")})
 			rheos.mode = false
-			update_status()
+			update_status("WRITING FILES",true)
 			resolve()
 		})
 	})
 }
 async function start_listening() {
-	update_status(false)
+	update_status("AWAITING COMMANDS",false)
 	await heos_command("system", "prettify_json_response", { enable: "on" }).catch(err => console.error("⚠ Failed to set responses"))
 }
 async function choose_binary(name) {
@@ -645,7 +644,7 @@ async function connect_roon() {
 	const roon = new RoonApi({
 		extension_id: "com.RHeos.beta",
 		display_name: "Rheos",
-		display_version: "0.6.1-3",
+		display_version: "0.6.1-4",
 		publisher: "RHEOS",
 		email: "rheos.control@gmail.com",
 		website: "https:/github.com/LINVALE/RHEOS",
@@ -701,31 +700,20 @@ async function connect_roon() {
 }
 
 async function update_status(message = "",warning = false) {
-	
-	
 	let RheosStatus = rheos_players.size + " HEOS Players on " + system_info[2] +" "+ system_info [3]+" "+ system_info [4] + ' at ' + system_info[0] + '  for ' + get_elapsed_time(start_time) + '\n'
     if (rheos.mode){
-	//if (message){
-	//	svc_status.set_status(RheosStatus, warning)
-	//}else {
-	
 		RheosStatus = RheosStatus + "_".repeat(120) + " \n \n " + (rheos.discovery > 0 ? ("⚠      UPnP CONNECTING       " + ("▓".repeat((rheos.discovery))+"░".repeat(30-rheos.discovery)))
 		: ("DISCOVERED " + rheos_players.size + " HEOS PLAYERS")) + "\n \n"
 		for (let player of rheos_players.values()) {
 		const { name, ip, model } = player
 		let quality = (my_settings[player.name])
 		RheosStatus = RheosStatus + (rheos.discovery ? "◐◓◑◒".slice(rheos.discovery % 4, (rheos.discovery % 4) + 1) + " " : (quality === "HR")  ?"◉  " :"◎  " ) + name?.toUpperCase() + " \t " + model + "\t" + ip + "\n"
-		}
-		RheosStatus = RheosStatus //+ "_".repeat(120) + "\n \n"
-	//}
+		}	
 	}
 	for (let zone of [...rheos_zones.values()].filter(zone => zone.state == "playing")) {
 		RheosStatus = RheosStatus + "🎶  " + zone.display_name + "\t ▶ \t" + zone.now_playing.one_line.line1 + "\n"
 	}
-	//rheos.mode && (RheosStatus = RheosStatus)
-	
-	
-svc_status.set_status(RheosStatus, warning)
+	svc_status.set_status(RheosStatus  )
 }
 function makelayout(my_settings) {
 	const players = [...rheos_players.values()],
@@ -760,7 +748,6 @@ function makelayout(my_settings) {
 		})
 		l.layout.push(_players_status)
 	}
-	
 	let _fixed_groups = { type: "group", title: "GROUPS", subtitle: " ", collapsable: true, items: [] };
 		    _fixed_groups.items.push({title:"Fixed Group Start Delay",type:"dropdown",values:[
 				{title: "MIN",value : 1000},
