@@ -271,7 +271,9 @@ async function create_fixed_group(group) {
 	const mac = "bb:bb:bb:"+ hex.replace(/..\B/g, '$&:').slice(1,7)
 	if (os.platform() == 'win32'){
 		rheos.processes[hex] = spawn('./UPnP/Bin/squeezelite/squeezelite-x64.exe',["-M",name,"-m", mac,"-o","-"])
-	} else {
+	} else if (os.arch() === 'arm'){
+		rheos.processes[hex] = spawn('./UPnP/Bin/squeezelite/squeezelitearmhf',["-M",name,"-m", mac])
+	}else {
 		rheos.processes[hex] = spawn('./UPnP/Bin/squeezelite/squeezelite',["-M",name,"-m", mac,"o","-"])
 	}
 	return 
