@@ -272,9 +272,17 @@ async function create_fixed_group(group) {
 	if (os.platform() == 'win32'){
 		log && console.log("SPAWNING SQUEEZELITE WINDOWS EXE",name)
 		rheos.processes[hex] = spawn('./UPnP/Bin/squeezelite/squeezelite-x64.exe',["-M",name,"-m", mac,"-o","-"])
+<<<<<<< HEAD
 	} else {
 		log && console.log("SPAWNING SQUEEZELITE",name)
 		rheos.processes[hex] = spawn('./UPnP/Bin/squeezelite/squeezelite',["-M",name,"-m", mac])
+=======
+	//} else if (os.arch() === 'arm'){
+	//	rheos.processes[hex] = spawn('./UPnP/Bin/squeezelite/squeezelite',["-M",name,"-m", mac])
+	}
+	else {
+		rheos.processes[hex] = spawn('./UPnP/Bin/squeezelite/squeezelite',["-M",name,"-m", mac,])
+>>>>>>> e56964806bd22cb4b56ef2675d3eef97719a5b24
 	}
 	return 
 }
