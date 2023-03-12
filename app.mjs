@@ -27,6 +27,9 @@ const rheos_groups = new Map()
 const builder = new xml2js.Builder({ async: true })
 const log = process.argv.includes("-l")||process.argv.includes("-log") || false
 init_signal_handlers()
+
+
+
 start_up()
 async function start_up(){
     console.log(system_info.toString())
