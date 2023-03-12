@@ -270,6 +270,7 @@ async function create_fixed_group(group) {
 		rheos.processes[hex] = spawn('./UPnP/Bin/squeezelite/squeezelite-x64.exe',["-M",name,"-m", mac,"-o","-"])
 	}
 	else {
+		log && console.log("SPAWNING SQUEEZELITE SQUEEZELITE OTHER",name)
 		rheos.processes[hex] = spawn('./UPnP/Bin/squeezelite/squeezelite',["-M",name,"-m", mac,])
 
 	}
