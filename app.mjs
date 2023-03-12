@@ -269,9 +269,15 @@ async function create_fixed_group(group) {
 		log && console.log("SPAWNING SQUEEZELITE WINDOWS EXE",name)
 		rheos.processes[hex] = spawn('./UPnP/Bin/squeezelite/squeezelite-x64.exe',["-M",name,"-m", mac,"-o","-"])
 	}
+
+	else if ((os.arch() === 'arm64')){
+		log && console.log("SPAWNING SQUEEZELITE SQUEEZELITE ARM64",name)
+		rheos.processes[hex] = spawn('./UPnP/Bin/squeezelite/squeezelitearmhf',["-M",name,"-m", mac])
+
+	}
 	else {
 		log && console.log("SPAWNING SQUEEZELITE SQUEEZELITE OTHER",name)
-		rheos.processes[hex] = spawn('./UPnP/Bin/squeezelite/squeezelite',["-M",name,"-m", mac,])
+		rheos.processes[hex] = spawn('./UPnP/Bin/squeezelite/squeezelite',["-M",name,"-m", mac])
 
 	}
 	return 
