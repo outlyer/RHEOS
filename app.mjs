@@ -27,9 +27,6 @@ const rheos_groups = new Map()
 const builder = new xml2js.Builder({ async: true })
 const log = process.argv.includes("-l")||process.argv.includes("-log") || false
 init_signal_handlers()
-
-
-
 start_up()
 async function start_up(){
     console.log(system_info.toString())
@@ -64,8 +61,6 @@ async function add_listeners() {
 			await update_heos_groups().catch(err => console.error(err))
 			for (const group of rheos_groups.values()) {
 				if (group.players.find(player => player.role == "leader")){
-
-				
 				try {
 				const players =	group.players.sort((a, b) => {let fa = a.role == "leader" ? 0 : 1; let fb = b.network == "leader" ? 0 : 1; return fa - fb} )	
 				const zone = rheos_zones?.get(rheos_players.get(group.gid)?.zone);
@@ -86,9 +81,7 @@ async function add_listeners() {
 				}
 			}else {
 				console.error("⚠ GROUPS CHANGED : NO GROUP LEADER",group)
-
 				}
-			
 			}
 		})
 		.on({ commandGroup: "event", command: "players_changed" }, async () => {
@@ -275,17 +268,10 @@ async function create_fixed_group(group) {
 	if (os.platform() == 'win32'){
 		log && console.log("SPAWNING SQUEEZELITE WINDOWS EXE",name)
 		rheos.processes[hex] = spawn('./UPnP/Bin/squeezelite/squeezelite-x64.exe',["-M",name,"-m", mac,"-o","-"])
-<<<<<<< HEAD
-	} else {
-		log && console.log("SPAWNING SQUEEZELITE",name)
-		rheos.processes[hex] = spawn('./UPnP/Bin/squeezelite/squeezelite',["-M",name,"-m", mac])
-=======
-	//} else if (os.arch() === 'arm'){
-	//	rheos.processes[hex] = spawn('./UPnP/Bin/squeezelite/squeezelite',["-M",name,"-m", mac])
 	}
 	else {
 		rheos.processes[hex] = spawn('./UPnP/Bin/squeezelite/squeezelite',["-M",name,"-m", mac,])
->>>>>>> e56964806bd22cb4b56ef2675d3eef97719a5b24
+
 	}
 	return 
 }
@@ -365,15 +351,12 @@ async function update_zones(zones){
 				const rheos_group = [...rheos_groups.values()].find(r_group => r_group.sum_group == sum_array(group))		
 				if(group &&(z.state == 'playing' && (old_zone?.state !== "playing")) && !fixed.includes(undefined)) {	
 					fixed && fixed.push(op.output_id)
-					if (z.outputs.length === 1){
-                   		svc_transport.transfer_zone(z,rheos_zones.get(rheos_outputs.get(fixed[0])?.zone_id)    )
-					}
-					if (!rheos_group)	{
-						await group_enqueue(group)
-					}
+					z.outputs.length === 1 &&  svc_transport.transfer_zone(z,rheos_zones.get(rheos_outputs.get(fixed[0])?.zone_id))
+					rheos_group || await group_enqueue(group)
 					svc_transport.group_outputs(fixed,()=>(play_zone(fixed[0])	))				
 				}else if((z.outputs.length >1) && (z.state=='paused')&& (old_zone?.state == "playing")){
-					rheos_group && group_enqueue(rheos_group?.gid)
+					rheos_group && await group_enqueue(rheos_group?.gid)
+		            await heos_command("player", "set_play_state", { pid: group.gid, state: "stop" }).catch(err => console.error(err))
 				} 
 			}
 			else {	
@@ -656,7 +639,7 @@ async function connect_roon() {
 	const roon = new RoonApi({
 		extension_id: "com.RHeos.beta",
 		display_name: "Rheos",
-		display_version: "0.6.1-5",
+		display_version: "0.6.1-6",
 		publisher: "RHEOS",
 		email: "rheos.control@gmail.com",
 		website: "https:/github.com/LINVALE/RHEOS",
