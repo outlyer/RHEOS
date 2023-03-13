@@ -270,14 +270,15 @@ async function create_fixed_group(group) {
 		rheos.processes[hex] = spawn('./UPnP/Bin/squeezelite/squeezelite-x64.exe',["-M",name,"-m", mac,"-o","-"])
 	}
 
-	else if ((os.arch() === 'arm64')){
-		log && console.log("SPAWNING SQUEEZELITE SQUEEZELITE ARM64",name)
-		rheos.processes[hex] = spawn('./UPnP/Bin/squeezelite/squeezelitearmhf',["-M",name,"-m", mac])
+	//else if ((os.arch() === 'arm64')){
+	//	log && console.log("SPAWNING SQUEEZELITE SQUEEZELITE ARM64",name)
+	//	rheos.processes[hex] = spawn('./UPnP/Bin/squeezelite/squeezelitearmhf',["-M",name,"-m", mac])
 
-	}
+	//}
 	else {
 		log && console.log("SPAWNING SQUEEZELITE SQUEEZELITE OTHER",name)
-		rheos.processes[hex] = spawn('./UPnP/Bin/squeezelite/squeezelite',["-M",name,"-m", mac])
+		//rheos.processes[hex] = spawn('./UPnP/Bin/squeezelite/squeezelite',["-M",name,"-m", mac])
+		rheos.processes[hex] = spawn('squeezelite',["-M",name,"-m", mac])
 
 	}
 	return 
@@ -361,9 +362,9 @@ async function update_zones(zones){
 					z.outputs.length === 1 &&  svc_transport.transfer_zone(z,rheos_zones.get(rheos_outputs.get(fixed[0])?.zone_id))
 					rheos_group || await group_enqueue(group)
 					svc_transport.group_outputs(fixed,()=>(play_zone(fixed[0])	))				
-				}else if((z.outputs.length >1) && (z.state=='paused')&& (old_zone?.state == "playing")){
+				}else if((z.outputs.length >1) && (z.state=='paused' || z.state == "stopped")&& (old_zone?.state == "playing" || !old_zone?.state)){
 					rheos_group && await group_enqueue(rheos_group?.gid)
-		            await heos_command("player", "set_play_state", { pid: group.gid, state: "stop" }).catch(err => console.error(err))
+		            rheos_group?.gid && await heos_command("player", "set_play_state", { pid: rheos_group?.gid, state: "pause" }).catch(err => console.error(err))
 				} 
 			}
 			else {	
