@@ -71,7 +71,7 @@ Fixed groups can be created from any group created using ROON or HEOS. To create
 All present ROON/HEOS groups will be listed - and shown initially as variable. 
 To have as a fixed group select from the drop down and this will be created. 
 If a fixed group with the same players has been previously created (even with a different lead player or order of players) it will appear as a new ROON output.
-Selecting play will group the HEos players and start play back. Pause will ungroup and stop playback. 
+Selecting play will group the HEOS players and start play back. Pause will ungroup and stop playback. 
 If the group has never been created bfore it needs to be enabled in ROON using Settings -> Audio -> Squeezebox where the group will appear with the HEOS group name. 
 This can be edited as needed in ROON and enabled or disabled as needed. On playing the group will be identified as a ROON group i.e. "player" + x and the chisen name will appear as the last player in the group with a cvolume control that will controll all other players in the group (as presently in the HEOS control app).
 
