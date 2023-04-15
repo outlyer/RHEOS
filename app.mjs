@@ -1,3 +1,4 @@
+//version: "0.6.3-0",
 "use-strict"
 import HeosApi from "heos-api"
 import RoonApi from "node-roon-api"
@@ -290,13 +291,8 @@ async function create_fixed_group(group){
 	const hex = Math.abs(get_heos_group_value(group.players.map(p => p.pid))).toString(16);
     const name = group.name
 	const mac = "bb:bb:bb:"+ hex.replace(/..\B/g, '$&:').slice(1,7)
-	//if (os.platform() == 'win32'){
-	//	log && console.log("SPAWNING SQUEEZELITE WINDOWS EXE",name,mac)
-	//	rheos.processes[hex] = spawn(await choose_binary(name,true),["-M",name,"-m", mac,"-o","-"])
-	//} else {
 		log && console.log("SPAWNING SQUEEZELITE SQUEEZELITE OTHER",name,mac)
 		rheos.processes[hex] = spawn(await choose_binary(name,true),["-M",name,"-m", mac,"-o","-"])
-	//}
 	return 
 }
 async function remove_fixed_group(group) {
