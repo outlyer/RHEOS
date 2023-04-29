@@ -1,4 +1,4 @@
-//version: "0.6.4-2",s
+//version: "0.6.4-3",s
 "use-strict"
 import HeosApi from "heos-api"
 import RoonApi from "node-roon-api"
@@ -125,7 +125,7 @@ async function add_listeners() {
 		.on({ commandGroup: "event", command: "player_state_changed" }, async (res) => {
 			const { heos: { message: { parsed: { pid,state} } } } = res
 			const player = rheos_players.get(pid)
-            const fixed = [...fixed_groups.values()].find(group => group.gid == player.pid)
+            const fixed = [...fixed_groups.values()].find(group => group.gid == player?.pid)
             if (fixed ){
 				fixed.state = state
 				if (state == "pause") {
@@ -297,10 +297,10 @@ async function create_player(pid) {
 	return 
 }
 async function load_fixed_groups(){
-	log && console.log("LOADING FIXED GROUPS");
+	log && console.log("LOADING FIXED GROUPS",fixed_groups);
 	[...fixed_groups.entries()].forEach( async fg => {
 		if (my_settings[fg[0]] && fg[1]){
-			create_fixed_group(fg[1])
+			create_fixed_group(fg)
 			if (rheos_groups.get(fg[1].gid)){
 				 await group_enqueue(fg[1].gid)
 			}
@@ -309,8 +309,11 @@ async function load_fixed_groups(){
 	return
 }
 async function create_fixed_group(group){
-	const hex = Math.abs(get_heos_group_value(group.players.map(p => p.pid))).toString(16);
-    const name = group.name
+	console.log("CREATING FIXED GROUP",group)
+	const hex = Math.abs(group[0]).toString(16);
+    const name = group[1].name
+	fixed_groups.set(group[0],group[1])
+
 	const mac = "bb:bb:bb:"+ hex.replace(/..\B/g, '$&:').slice(1,7)
 		log && console.log("SPAWNING SQUEEZELITE",name,mac)
 		rheos.processes[hex] = spawn("squeezelite",["-M",name,"-m", mac])
@@ -336,8 +339,10 @@ async function start_roon() {
 	my_settings = roon.load_config("settings")|| def.settings || {}
 	my_players = roon.load_config("players") || []
 	let  fg = roon.load_config("fixed_groups") || []
-	if (fg.length){my_fixed_groups = JSON.parse(fg)} 
-	my_fixed_groups?.forEach(g => {g[1].state = 'paused';fixed_groups.set(g[0],g[1])}				)
+	if (fg.length){
+		my_fixed_groups = JSON.parse(fg)} 
+		my_fixed_groups?.forEach(g => {g[1].state = 'paused';fixed_groups.set(g[0],g[1])}			
+	)
 	my_settings.clear_settings = false
 	my_settings.restart = false		
 	const svc_settings = new RoonApiSettings(roon, {
@@ -354,7 +359,7 @@ async function start_roon() {
 						if (settings.values[fg[0]] == "FIXED"){
 							fixed_groups.set(fg[0],fg[1])
 							log && console.log("CREATING FIXED GROUP",fg[1].name)
-							create_fixed_group(fg[1])
+							create_fixed_group(fg)
 							await group_enqueue(fg[1].gid)
 						} else if ((settings.values[fg[0]] == "VARIABLE")) {
 							remove_fixed_group(fg[0])
@@ -367,10 +372,13 @@ async function start_roon() {
 							await group_enqueue(fg[1].gid)
 						}		
 			    }
-			my_settings = l.values
-			if (my_settings.clear_settings) {my_settings.clear_settings = false; my_settings = def.settings} 
-				get_all_groups()
+				my_settings = l.values
+				console.log("FIXEDGROUPS",fixed_groups)
+				my_fixed_groups = JSON.stringify([...fixed_groups.entries()])
 				roon.save_config("fixed_groups",my_fixed_groups)
+			if (my_settings.clear_settings) {
+				my_settings.clear_settings = false; my_settings = def.settings} 
+				get_all_groups()
 				roon.save_config("settings", my_settings)
 			}
 			req.send_complete(l.has_error ? "NotValid" : "Success", { settings: l })
@@ -393,7 +401,7 @@ async function update_outputs(outputs){
 			rheos_outputs.set(op.output_id,op)
 			const player = await get_player(op?.source_controls[0]?.display_name)
 			if  (player){
-				player.output = op.output_idet_heos_group
+				player.output = op.output_id
 				await update_volume(op,player)
 			} else {	
 				let f = [...fixed_groups.values()].find(fixed => fixed.output == op.display_name ||  get_heos_group_value(fixed.name)===get_heos_group_value(op.source_controls[0].display_name))
@@ -714,7 +722,7 @@ async function connect_roon() {
 	const roon = new RoonApi({
 		extension_id: "com.RHeos.beta",
 		display_name: "Rheos",
-		display_version: "0.6.4-2",
+		display_version: "0.6.4-3",
 		publisher: "RHEOS",
 		email: "rheos.control@gmail.com",
 		website: "https:/github.com/LINVALE/RHEOS",
