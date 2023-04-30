@@ -1,4 +1,4 @@
-//version: "0.6.4-3",s
+const version = "0.6.4-4"
 "use-strict"
 import HeosApi from "heos-api"
 import RoonApi from "node-roon-api"
@@ -30,7 +30,7 @@ const log = process.argv.includes("-l")||process.argv.includes("-log") || false
 init_signal_handlers()
 start_up()
 async function start_up(){
-    console.log(system_info.toString())
+    console.log(system_info.toString(),version)
 	
 	await start_roon().catch(err => console.error(err))
 	await start_heos().catch(err => console.error(err))
@@ -309,15 +309,15 @@ async function load_fixed_groups(){
 	return
 }
 async function create_fixed_group(group){
-	console.log("CREATING FIXED GROUP",group)
+	log && console.log("CREATING FIXED GROUP",group)
 	const hex = Math.abs(group[0]).toString(16);
-    const name = group[1].name
+    const name = group[1].name.split("+")
+	const display_name = "🔗 " +name[0].trim() + " + " + (name.length-1)
+	group[1].display_name = display_name
 	fixed_groups.set(group[0],group[1])
-
 	const mac = "bb:bb:bb:"+ hex.replace(/..\B/g, '$&:').slice(1,7)
-		log && console.log("SPAWNING SQUEEZELITE",name,mac)
-		rheos.processes[hex] = spawn("squeezelite",["-M",name,"-m", mac])
-	return 
+		log && console.log("SPAWNING SQUEEZELITE",display_name,mac)
+		rheos.processes[hex] = spawn("squeezelite",["-M",display_name,"-m", mac,"-o","default"])
 }
 async function remove_fixed_group(g) {
 	const hex = Math.abs(g).toString(16);
@@ -373,7 +373,6 @@ async function start_roon() {
 						}		
 			    }
 				my_settings = l.values
-				console.log("FIXEDGROUPS",fixed_groups)
 				my_fixed_groups = JSON.stringify([...fixed_groups.entries()])
 				roon.save_config("fixed_groups",my_fixed_groups)
 			if (my_settings.clear_settings) {
@@ -404,7 +403,7 @@ async function update_outputs(outputs){
 				player.output = op.output_id
 				await update_volume(op,player)
 			} else {	
-				let f = [...fixed_groups.values()].find(fixed => fixed.output == op.display_name ||  get_heos_group_value(fixed.name)===get_heos_group_value(op.source_controls[0].display_name))
+				let f = [...fixed_groups.values()].find(fixed => fixed.output == op.display_name)
 				f?.gid && await update_group_volume(op,f.gid)
 			}
 		} else {
@@ -420,11 +419,9 @@ async function update_zones(zones){
 	for (const z of zones) {
 		const old_zone =  rheos_zones.get(z.zone_id)
 		if (z.outputs){
-			const group_name = z.outputs.flatMap(output => output.source_controls).flatMap(control => control.display_name).slice(-1)
-			const group_value = get_heos_group_value(group_name)
-			const fixed = ([...fixed_groups.values()].find(group => group.sum_group === group_value))
+			const group_name = z.outputs.flatMap(output => output.source_controls).flatMap(control => control.display_name)
+			const fixed = ([...fixed_groups.values()].find(group => group.display_name === group_name[0]))
 			if (fixed?.gid){
-				log && console.log("ZONE",z.display_name,z.state,"FIXED GROUP FOUND")
 				const op = z.outputs[0]
 				fixed.output = op.display_name
 				z.fixed = fixed
@@ -482,6 +479,7 @@ async function update_volume(op,player){
 	(player && op) && (player.output = op.output_id) && (player.zone = op.zone_id)
 }
 async function update_group_volume(op,gid){
+	//console.log("UPDATING GROUP VOLUME",gid,op.volume.value)
 	    gid && await heos_command("group", "set_volume", { gid: gid, level: op.volume.value }).catch(err => console.error(err))
 		gid && await heos_command("group", "set_mute", { gid: gid, state: op.volume.is_muted ? "on" : "off" }).catch(err => console.error(err))
 }
@@ -922,10 +920,10 @@ function sum_array(array) {
 }
 function get_all_groups(){
 	all_groups.clear()
-	for (const group of fixed_groups){
+	for (const group of rheos_groups){
 		all_groups.set(get_heos_group_value(group[1]),group[1])
 	}
-	for (const group of rheos_groups){
+	for (const group of fixed_groups){
 		all_groups.set(get_heos_group_value(group[1]),group[1])
 	}
 	return all_groups
