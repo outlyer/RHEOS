@@ -1,4 +1,4 @@
-const version = "0.6.5-3"
+const version = "0.6.5-5"
 "use-strict"
 import HeosApi from "heos-api"
 import RoonApi from "node-roon-api"
@@ -147,7 +147,7 @@ async function add_listeners() {
             if (fixed ){
 				fixed.state = state
 				if (state == "pause") {
-                    await group_enqueue(pid)
+                    await group_enqueue([pid])
 				}			
 			}
 			player && (player.state = state) && log && console.log("PLAYER STATE CHANGED",player.name,state) 
@@ -282,7 +282,7 @@ async function compare_players(){
 	const delp =  old_pids.filter(old_pid => !new_pids.includes(old_pid))
 	if (delp.length) {
 		delp.forEach( (d)=>{
-			process.kill(Number(rheos.processes[d].pid,'SIGTERM'))
+			process.kill(Number(rheos.processes[d].pid,'SIGKILL'))
 			delete rheos.processes[d]	
 		})
 	}
@@ -295,7 +295,7 @@ async function compare_players(){
 }
 async function create_player(pid) {
 	if (rheos.processes[pid]) {
-		process.kill(Number(rheos.processes[pid].pid),'SIGTERM')
+		process.kill(Number(rheos.processes[pid].pid),'SIGKILL')
 	}
 	const player = rheos_players.get(pid)
 	const name = player.name.replace(/\s/g, "")
@@ -316,9 +316,6 @@ async function load_fixed_groups(){
 	[...fixed_groups.entries()].forEach( async fg => {
 		if (fg && my_settings[fg[0]] && fg[1]){
 			create_fixed_group(fg)
-			if (rheos_groups.get(fg[1].gid)){
-				 await group_enqueue(fg[1].gid)
-			}
 		}
 	})
 }
@@ -327,7 +324,7 @@ async function create_fixed_group(group){
 	const hex = Math.abs(group[0]).toString(16);
 	if (rheos.processes[hex]?.pid){
 		try { 
-			process.kill( rheos.processes[hex]?.pid,'SIGTERM') 
+			process.kill( rheos.processes[hex]?.pid,'SIGKILL') 
 			fixed_groups.delete(g)
 			get_all_groups()
 		} catch { log && console.log("UNABLE TO DELETE PROCESS FOR"),group}	
@@ -340,6 +337,10 @@ async function create_fixed_group(group){
 	const mac = "bb:bb:bb:"+ hex.replace(/..\B/g, '$&:').slice(1,7)
 	log && console.log("SPAWNING SQUEEZELITE",display_name,mac,hex,group[1].resolution +" : 500")
 	rheos.processes[hex] = spawn(squeezelite,["-a","24","-r",group[1].resolution +" : 500","-M",display_name,"-m", mac,"-o","-"])
+	if (rheos_groups.get(group[1].gid)){
+		console.log("UN GROUPING",[group[1].gid][0])
+		await group_enqueue([group[1].gid])
+	}
 	return
 }
 async function remove_fixed_group(g) {
@@ -347,7 +348,7 @@ async function remove_fixed_group(g) {
 	const hex = Math.abs(g).toString(16);
 	const pid= (rheos.processes[hex]?.pid)
 	try { 
-		pid && process.kill( pid ,'SIGTERM') 
+		pid && process.kill( pid ,'SIGKILL') 
 		fixed_groups.delete(g)
 		get_all_groups()
 	}
@@ -668,6 +669,7 @@ async function choose_binary(name, fixed = false) {
 	}
 }
 async function group_enqueue(group) {
+	log && console.log("ENQUED",group)
 	Array.isArray(group) && (group = group.filter(o => o))
 	if (!group) {
 		return 
@@ -698,6 +700,7 @@ async function group_dequeue(timer = 30000) {
 	try {
 		rheos.working = true
 		if (![...rheos_groups.values()].includes( sum_array(item))){
+			log && console.log("SETTING GROUP",item)
 			await heos_command("group", "set_group", { pid: item?.group?.toString() },timer).catch((err) => {item.reject(err); rheos.working = false; group_dequeue() })
 		}
 		rheos.working = false 
@@ -745,7 +748,7 @@ async function connect_roon() {
 	const roon = new RoonApi({
 		extension_id: "com.RHeos.beta",
 		display_name: "Rheos",
-		display_version: "0.6.5-3",
+		display_version: "0.6.5-4",
 		publisher: "RHEOS",
 		email: "rheos.control@gmail.com",
 		website: "https:/github.com/LINVALE/RHEOS",
@@ -798,7 +801,6 @@ async function connect_roon() {
 						Array.isArray(data.zones_added) && await update_zones(data.zones_added);
 						Array.isArray(data.zones_changed) && await update_zones(data.zones_changed);
 						Array.isArray(data.zones_removed) && await update_zones(data.zones_removed);	
-
 					}	
 					break
 					default: console.error('⚠',cmd,data)
@@ -866,10 +868,6 @@ function makelayout(my_settings) {
 		})
 		l.layout.push(_players_status)
 	}
-
-   
-
-
 	let _fixed_groups = { type: "group", title: "GROUPS", subtitle: " ", collapsable: true, items: [] };
 			for (let group of all_groups.entries()) {
 			if (group) {
@@ -910,7 +908,6 @@ function makelayout(my_settings) {
 			{ title: "● RESET STATUS TO DEFAULTS", type: "dropdown", setting: 'clear_settings', values: [{ title: "YES", value: true}, { title: "NO", value: false}] },
 		]
 	})
-
 	return (l)
 }
 function get_zone_group_value(zone_id){
@@ -973,8 +970,7 @@ function get_elapsed_time(start_time) {
 function init_signal_handlers() {
     const handle = function(signal) {
 		console.log("\r\nRHEOS IS SHUTTING DOWN")
-		//process.on('SIGINT', handle);
-        process.kill(Number(process.pid,'SIGTERM'))
+        process.kill(Number(process.pid,'SIGKILL'))
 		process.exit(0);
     };
     process.on('SIGTERM', handle);
