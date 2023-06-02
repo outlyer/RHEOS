@@ -889,7 +889,7 @@ function makelayout(my_settings) {
 		}
 		l.layout.push(_fixed_groups)
 	l.layout.push({
-		type: "group", title: "ADVANCED (experimantal) ", collapsable: true, items: [
+		type: "group", title: "ADVANCED (experimental) ", collapsable: true, items: [
 			{ title: "● Buffer Size", type: "dropdown", setting: 'streambuf_size', values: [{ title: "Small", value: 524288 }, { title: "Medium", value: 524288 * 2 }, { title: 'Large', value: 524288 * 3 }] },
 			{ title: "● Output Size", type: "dropdown", setting: 'output_size', values: [{ title: 'Small', value: 4194304 }, { title: 'Medium', value: 4194304 * 2 }, { title: 'Large', value: 4194304 * 3 }] },
 			{ title: "● Stream Length", type: "dropdown", setting: 'stream_length', values: [{ title: "no length", value: -1 }, { title: 'chunked', value: -3 }] },
