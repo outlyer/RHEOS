@@ -380,18 +380,12 @@ async function start_roon() {
 			}
 			if (!isdryrun && !l.has_error) {
 				for (let fg of all_groups){	
-					
-					if (settings.values[fg[0]] && settings.values[fg[0]].includes("FIXED")){
-						fg[1].resolution = settings.values[fg[0]].includes("HR") ? "192000" : "48000"
+					if (! isNaN(settings.values[fg[0]])){
+						fg[1].resolution = settings.values[fg[0]]
 						fixed_groups.set(fg[0],fg[1])
-						create_fixed_group(fg)
+						await create_fixed_group(fg)
 						log && console.log("NOW UNGROUPING ",fg)
 						await group_enqueue(fg[1].gid)
-					} else if ((settings.values[fg[0]] == "VARIABLE")) {
-						remove_fixed_group(fg[0])
-						log && console.log("CREATING VARIABLE GROUP",fg[1].name)
-						const players =	fg[1].players.sort((a, b) => {let fa = a.role == "leader" ? 0 : 1; let fb = b.role == "leader" ? 0 : 1; return fa - fb} )	
-						await group_enqueue(players.map(p => p.pid))
 					}	else if ((settings.values[fg[0]] == "DELETE"))	{
 						remove_fixed_group(fg[0])
 						log && console.log("DELETING GROUP",fg[1].name)
@@ -430,8 +424,11 @@ async function update_outputs(outputs){
 				await update_volume(op,player)
 			} else {	
 				let group = [...fixed_groups.values()].find(fixed => fixed.output == op.display_name)
-				group = [...rheos_groups.values()].find(r => r?.sum_group == group?.sum_group)
+			        group = [...rheos_groups.values()].find(r => r?.sum_group == group?.sum_group)
 				group?.gid && await update_group_volume(op,group)
+				if (op?.volume?.value > my_settings.max_safe_vol || !op.volume.value) { 
+					svc_transport.change_volume(op,"absolute",20)		
+				}
 			}
 		} else {
 			rheos_outputs.delete(op.output_id)
@@ -444,6 +441,7 @@ async function update_zones(zones){
 	return new Promise(async function (resolve) {
 	for (const z of zones) {
 		const old_zone =  rheos_zones.get(z.zone_id)
+		
 		if (z.outputs){
 			const group_name = z.outputs.flatMap(output => output.source_controls).flatMap(control => control.display_name)
 			const fixed = ([...fixed_groups.values()].find(group => group.display_name === group_name[0]))
@@ -748,7 +746,7 @@ async function connect_roon() {
 	const roon = new RoonApi({
 		extension_id: "com.RHeos.beta",
 		display_name: "Rheos",
-		display_version: "0.6.5-4",
+		display_version: "0.6.5-5",
 		publisher: "RHEOS",
 		email: "rheos.control@gmail.com",
 		website: "https:/github.com/LINVALE/RHEOS",
@@ -854,6 +852,11 @@ function makelayout(my_settings) {
 	l.layout.push(
 		{ type: "string", title: "Roon Extension Host IP Address", maxlength: 15, setting: "host_ip" }
 	)
+
+	l.layout.push(
+		{ title: "Maximum Safe Volume", type: "integer", setting: 'max_safe_vol', min: 0, max: 100 }
+		
+	)
 	if (players.length) {
 		let _players_status = { type: "group", title: "PLAYERS", subtitle: " ", collapsable: true, items: [] }
 		players.forEach((player) => {
@@ -873,9 +876,8 @@ function makelayout(my_settings) {
 			if (group) {
 				let name = group[1].players.map(player=>player.name).toString()
 				let values = []
-				values.push({title: "HI RES FIXED GROUP", value: "FIXED_HR"})	
-				values.push({title: "CD RES FIXED GROUP", value: "FIXED_CD"})	
-				values.push({title: "VARIABLE GROUP", value: "VARIABLE"})
+				values.push({title: "HI RES FIXED GROUP", value: 192000})	
+				values.push({title: "CD RES FIXED GROUP", value: 48000})	
 				values.push({title: "DELETE GROUP", value: "DELETE"})
 				_fixed_groups.items.push({
 					title: name,
