@@ -427,7 +427,7 @@ async function update_outputs(outputs){
 			        group = [...rheos_groups.values()].find(r => r?.sum_group == group?.sum_group)
 				group?.gid && await update_group_volume(op,group)
 				if (op?.volume?.value > my_settings.max_safe_vol || !op.volume.value) { 
-					svc_transport.change_volume(op,"absolute",20)		
+					svc_transport.change_volume(op,"absolute",my_settings.max_safe_vol )		
 				}
 			}
 		} else {
