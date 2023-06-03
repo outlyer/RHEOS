@@ -37,7 +37,7 @@ Then switch to that directory and type “npm install”, This should create a f
 To install rheos using `npm`: 
 
 ```
-npm install rheos
+npm install rheos -g
 ```
 
 ## Initial Set Up
@@ -67,15 +67,17 @@ Under RHEOS UPnP Settings there are options to select buffer-size, output-size, 
 
 The HEOS players can be controlled as a normal ROON endpoint. Grouping is done through standard ROON grouping but behind the scenes these are translated to HEOS groups and you will see the change appear in the HEOS app.
 
-Fixed groups can be created from any group created using ROON or HEOS. To create a fixed grouop that is automatically regenerated when a fixed group output is played go to settings -> groups 
-All present ROON/HEOS groups will be listed - and shown initially as variable. 
-To have as a fixed group select from the drop down and this will be created. 
-If a fixed group with the same players has been previously created (even with a different lead player or order of players) it will appear as a new ROON output.
-Selecting play will group the HEOS players and start play back. Pause will ungroup and stop playback. 
-If the group has never been created bfore it needs to be enabled in ROON using Settings -> Audio -> Squeezebox where the group will appear with the HEOS group name. 
-This can be edited as needed in ROON and enabled or disabled as needed. On playing the group will be identified as a ROON group i.e. "player" + x and the chisen name will appear as the last player in the group with a cvolume control that will controll all other players in the group (as presently in the HEOS control app).
+A fixed group is a feature found in other interfaces but not with ROON or HEOS. It allows a pre-specified group to be automatically formed when the fixed group is selected and played. Players ungroup when play is stopped. Individual volume levels and mute for each player can be controlled from ROON and volume and mute adjusted for all players at the same time. A fixed group can be configured as Hi Res 192kHz 24 bit or CD Res 48kHz 16 bit. If a player with lower resolution is in the group is included then the entire group will play at the lower resolution.
 
-Individaul and  fixed group players can have their volume changed and be muted (either in ROON or the Heos app).
+To create a group, select the outputs/players you wish to group in the ROON interface or using the HEOS app if you prefer. Once grouped this can be converted to a fixed group in ROON by opening Settings->Extensions->RHEOS->Settings->Groups. The group will be shown with a dropdown selection for Hi Res Fixed Group, CD Res, or Delete. Selecting Hi Res or CD and saving will create a new Virtual Squeezebox Player named after the selected group. Selecting Delete will remove a previously fixed group
+
+Once created (only for the first time) go to Settings->Audio and a new Squeezebox should be there waiting to be Enabled. The name to be displayed in ROON should be entered to something that describes the group. Insert a Unicode symbol such as :link: or :house: or :notes: as the first word - so fixed groups are easily identified and always are at the top of the list of available zones to play in ROON. The group will persist in ROON if enabled as an audio endpoint and can be recreated by grouping the same players - irrespective of their order of entry.
+
+Once you have enabled the player, use it as normal, selecting play or pause, skip or skip back. On play, the group will automatically form (the name will then be show as the first device in the group + number of players) and it will ungroup when stopped. When the volume control for the group is selected, all player volumes are shown as in a normal group but in addition, the fixed group player will appear at the end of the list (identified by the name you choose and any inserted characters). This will control all of the player volumes in the group as well as mute or unmute all.
+
+Fixed groups are not bi-directional and can not be constructed or controlled from the HEOS app.
+
+
 
 ### Known Limitations
 
@@ -88,6 +90,7 @@ Skipping to next track in ROON playlist is not possible from HEOS.
 Devices will show "Streaming from LMS" on their display and in the HEOS app.
 
 Cover art and metadata are not shown on the HEOS app or on the playback device.
+
 Windows firewalls can cause some issues. If a HEOS device is found and selected but doesnt play even a when CD resolution is selected take a look at the firewall. Allow two specific executable files to be passed throu ./ROON/UPnP/Bin/RHEOS2UPnP and ./ROON/UPnP/Bin/Squeezelite/
 
 
