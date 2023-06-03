@@ -67,8 +67,8 @@
     <friendly_name>Family Room ND8006</friendly_name>
     <mac>bb:bb:61:4b:6b:4f</mac>
     <enabled>1</enabled>
-    <mode>thru</mode>
-    <sample_rate>192000</sample_rate>
+    <mode>flc:0,r:48000,s:16</mode>
+    <sample_rate>48000</sample_rate>
   </device>
   <device>
     <udn>uuid:c9367a88-61a4-1de5-0080-0005cd6c6aee</udn>

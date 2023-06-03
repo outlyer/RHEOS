@@ -1,6 +1,5 @@
-const version = "0.6.5-6"
+const version = "0.6.5-8"
 "use-strict"
-import HeosApi from "heos-api"
 import RoonApi from "node-roon-api"
 import RoonApiSettings from "node-roon-api-settings"
 import RoonApiStatus from "node-roon-api-status"
@@ -12,6 +11,7 @@ import ip from "ip"
 import process, { pid } from "node:process"
 import xml2js, { parseStringPromise } from "xml2js"
 import util from "node:util"
+import HeosApi from "heos-api"
 
 var roon, svc_status, my_settings, svc_transport, rheos_connection, my_players, my_fixed_groups, squeezelite;
 const fixed_groups = new Map()
@@ -746,7 +746,7 @@ async function connect_roon() {
 	const roon = new RoonApi({
 		extension_id: "com.RHeos.beta",
 		display_name: "Rheos",
-		display_version: "0.6.5-6",
+		display_version: "0.6.5-8",
 		publisher: "RHEOS",
 		email: "rheos.control@gmail.com",
 		website: "https:/github.com/LINVALE/RHEOS",
