@@ -15,7 +15,7 @@
     "node-roon-api-status": "github:roonlabs/node-roon-api-status",
     "node-roon-api-transport": "github:roonlabs/node-roon-api-transport",
     "node-uuid": "^1.4.8",
-    "xml2js": "^0.4.23"
+    "xml2js": "^0.6.0"
   },
   "repository": {
     "type": "git",
