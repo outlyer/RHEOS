@@ -1,4 +1,4 @@
-const version = "0.6.5-14"
+const version = "0.6.5-15"
 "use-strict"
 import RoonApi from "node-roon-api"
 import RoonApiSettings from "node-roon-api-settings"
@@ -173,7 +173,6 @@ async function discover_devices() {
 		const players = await get_players()
 			try {
 				    log && console.log('READING PROFILES CONFIG')
-					await fs.writeFile('./UPnP/Profiles/config.xml', "",{flag:"a"})
 					const data = await fs.readFile('./UPnP/Profiles/config.xml', 'utf8')
 					const slim_devices = await parseStringPromise(data)
 					const devices = slim_devices.squeeze2upnp.device.map(d => d.friendly_name[0])
@@ -211,10 +210,7 @@ async function create_root_xml() {
 			rheos.mode = true
 			let app = await choose_binary()	
 			try {
-				const content = '';
-				await fs.writeFile('./UPnP/Profiles/config.xml', content);
 			  	await execFileSync(app, ['-i', './UPnP/Profiles/config.xml', '-b', ip.address()])
-			
 			} catch (err) {
 				console.log(err);
 			}
@@ -751,7 +747,7 @@ async function connect_roon() {
 	const roon = new RoonApi({
 		extension_id: "com.RHeos.beta",
 		display_name: "Rheos",
-		display_version: "0.6.5-14",
+		display_version: "0.6.5-15",
 		publisher: "RHEOS",
 		email: "rheos.control@gmail.com",
 		website: "https:/github.com/LINVALE/RHEOS",
