@@ -1,4 +1,4 @@
-const version = "0.6.5-10"
+const version = "0.6.5-12"
 "use-strict"
 import RoonApi from "node-roon-api"
 import RoonApiSettings from "node-roon-api-settings"
@@ -30,8 +30,8 @@ const rheos_groups = new Map()
 const play_pending = []
 const builder = new xml2js.Builder({ async: true })
 const log = process.argv.includes("-l")||process.argv.includes("-log") || false
-init_signal_handlers()
 
+init_signal_handlers()
 start_up()
 
 async function start_up(){
@@ -73,11 +73,10 @@ async function add_listeners() {
 		})
 		.onError((err) => console.error("⚠ HEOS REPORTS ERROR", err))
 		.on({ commandGroup: "event", command: "groups_changed" }, async () => {
-			log &&console.log("GROUPS CHANGED")
+			log && console.log("GROUPS CHANGED")
 			await update_heos_groups().catch(err => console.error(err))
 			for (const group of rheos_groups.values()) {
 				if (group.players.find(player => player.role == "leader")){
-				try {
 				const players =	group.players.sort((a, b) => {let fa = a.role == "leader" ? 0 : 1; let fb = b.role == "leader" ? 0 : 1; return fa - fb} )	
 				const zone = rheos_zones?.get(rheos_players.get(group.gid)?.zone);
                 const new_outputs= players?.map(player => rheos_players.get(player.pid)?.output) || []
@@ -93,13 +92,11 @@ async function add_listeners() {
 				  	} 
                     let index = play_pending.indexOf(zone?.outputs[zone?.outputs.length-1].output_id)
 					if (index !== -1){
+						let z = rheos_zones.get(zone.zone_id)
+						log && console.log(z.display_name,z.state,z.is_play_allowed)
 						svc_transport.control(zone,"play")
 						play_pending.splice(index,1)
 					}
-				}
-				catch {
-					log &&console.error("⚠ GROUPS CHANGED : ERROR GETTING PLAYERS",group)
-				}
 			}else {
 				log && console.error("⚠ GROUPS CHANGED : NO GROUP LEADER",group)
 				}
@@ -179,6 +176,7 @@ async function discover_devices() {
 		const players = await get_players()
 			try {
 				    log && console.log('READING PROFILES CONFIG')
+					await fs.writeFile('./UPnP/Profiles/config.xml', "",{flag:"a"})
 					const data = await fs.readFile('./UPnP/Profiles/config.xml', 'utf8')
 					const slim_devices = await parseStringPromise(data)
 					const devices = slim_devices.squeeze2upnp.device.map(d => d.friendly_name[0])
@@ -335,7 +333,7 @@ async function create_fixed_group(group){
 		try { 
 			process.kill( rheos.processes[hex]?.pid,'SIGKILL') 
 			fixed_groups.delete(g)
-			get_all_groups()
+			await get_all_groups()
 		} catch { log && console.log("UNABLE TO DELETE PROCESS FOR"),group}	
 		
 	}
@@ -359,7 +357,7 @@ async function remove_fixed_group(g) {
 	try { 
 		pid && process.kill( pid ,'SIGKILL') 
 		fixed_groups.delete(g)
-		get_all_groups()
+		await get_all_groups()
 	}
 	catch { log && console.log("UNABLE TO DELETE PROCESS FOR"),g}	 
    	return 
@@ -407,7 +405,7 @@ async function start_roon() {
 			roon.save_config("fixed_groups",my_fixed_groups)
 			if (my_settings.clear_settings) {
 				my_settings.clear_settings = false; my_settings = def.settings} 
-				get_all_groups()
+				await get_all_groups()
 				roon.save_config("settings", my_settings)
 			}
 			await start_heos();
@@ -745,7 +743,7 @@ async function update_heos_groups() {
             const remove = old_groups
 			svc_transport.ungroup_outputs(rheos_zones.get((rheos_players.get(remove[0])?.zone))?.outputs)
 		}
-		get_all_groups()
+		await get_all_groups()
 		resolve()
 	}).catch(err => console.error(err))
 }
@@ -755,7 +753,7 @@ async function connect_roon() {
 	const roon = new RoonApi({
 		extension_id: "com.RHeos.beta",
 		display_name: "Rheos",
-		display_version: "0.6.5-10",
+		display_version: "0.6.5-12",
 		publisher: "RHEOS",
 		email: "rheos.control@gmail.com",
 		website: "https:/github.com/LINVALE/RHEOS",
@@ -955,7 +953,7 @@ function sum_array(array) {
 	let total = array?.reduce(function (acc, cur) { return acc + cur }, typeof (array[0]) == 'string' ? "" : 0)
 	return total
 }
-function get_all_groups(){
+async function get_all_groups(){
 	all_groups.clear()
 	for (const group of rheos_groups){
 		all_groups.set(get_heos_group_value(group[1]),group[1])
