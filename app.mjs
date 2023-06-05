@@ -1,4 +1,4 @@
-const version = "0.6.5-12"
+const version = "0.6.5-13"
 "use-strict"
 import RoonApi from "node-roon-api"
 import RoonApiSettings from "node-roon-api-settings"
@@ -42,7 +42,7 @@ async function start_up(){
 	console.log(system_info.toString(),roon.extension_reginfo.display_version)
 	const c = spawn("squeezelite")
 		c.on('error', async function(err) {
-		console.error('SQUEEZLITE NOT INSTALLED : LOADING BINARIES');
+		console.error('SQUEEZELITE NOT INSTALLED : LOADING BINARIES');
 		squeezelite = await choose_binary("squeezelite",true)
 	})
 	await start_heos().catch(err => console.error(err))
@@ -73,7 +73,6 @@ async function add_listeners() {
 		})
 		.onError((err) => console.error("⚠ HEOS REPORTS ERROR", err))
 		.on({ commandGroup: "event", command: "groups_changed" }, async () => {
-			log && console.log("GROUPS CHANGED")
 			await update_heos_groups().catch(err => console.error(err))
 			for (const group of rheos_groups.values()) {
 				if (group.players.find(player => player.role == "leader")){
@@ -81,24 +80,22 @@ async function add_listeners() {
 				const zone = rheos_zones?.get(rheos_players.get(group.gid)?.zone);
                 const new_outputs= players?.map(player => rheos_players.get(player.pid)?.output) || []
 				const old_outputs = zone?.outputs.map(output => output?.output_id) || []
-					if (get_zone_group_value(zone) !== get_heos_group_value(group)) {
-						if (new_outputs?.length && new_outputs?.length > old_outputs?.length) {
-							new_outputs && svc_transport.group_outputs(new_outputs)
-						}
-						else {
-							let removed_outputs = old_outputs?.filter(op => !new_outputs?.includes(op))
-							svc_transport.ungroup_outputs(old_outputs)
-						}
-				  	} 
-                    let index = play_pending.indexOf(zone?.outputs[zone?.outputs.length-1].output_id)
-					if (index !== -1){
-						let z = rheos_zones.get(zone.zone_id)
-						log && console.log(z.display_name,z.state,z.is_play_allowed)
-						svc_transport.control(zone,"play")
-						play_pending.splice(index,1)
+				if (get_zone_group_value(zone) !== get_heos_group_value(group)) {
+					if (new_outputs?.length && new_outputs?.length > old_outputs?.length) {
+						new_outputs && svc_transport.group_outputs(new_outputs)
 					}
-			}else {
-				log && console.error("⚠ GROUPS CHANGED : NO GROUP LEADER",group)
+					else {
+						let removed_outputs = old_outputs?.filter(op => !new_outputs?.includes(op))
+						svc_transport.ungroup_outputs(removed_outputs)
+					}
+				} 
+				const index = play_pending.findIndex(pp => zone?.outputs[zone?.outputs.length-1].output_id == pp.output)
+				if (index !== -1 && players.length == play_pending[index].fixed.players.length){
+					setTimeout(()=> {svc_transport.control(zone,"play")},500)
+					play_pending.splice(index,1)
+				}
+				} else {
+					log && console.error("⚠ GROUPS CHANGED : NO GROUP LEADER",group)
 				}
 			}
 		})
@@ -143,7 +140,7 @@ async function add_listeners() {
             const fixed = [...fixed_groups.values()].find(group => group.gid == player?.pid)
             if (fixed ){
 				fixed.state = state
-				if (state == "pause") {
+				if (state == "pause" && play_pending.findIndex((pp) => {fixed.gid == pid})==-1 ) {
                     await group_enqueue([pid])
 				}			
 			}
@@ -448,12 +445,10 @@ async function update_zones(zones){
 	return new Promise(async function (resolve) {
 	for (const z of zones) {
 		const old_zone =  rheos_zones.get(z.zone_id)
-		
 		if (z.outputs){
 			const group_name = z.outputs.flatMap(output => output.source_controls).flatMap(control => control.display_name)
 			const fixed = ([...fixed_groups.values()].find(group => group.display_name === group_name[0]))
 			if (fixed?.gid){
-				log && console.log("FIXED GROUP FOUND :",fixed)
 				const op = z.outputs[0]
 				fixed.output = op.display_name
 				z.fixed = fixed
@@ -463,8 +458,11 @@ async function update_zones(zones){
 				if ( z.state == "playing"  && !rheos_groups.get(fixed.gid)){
 					svc_transport.transfer_zone(z.outputs[0],rheos_outputs.get(zone_outputs[0]))
 					svc_transport.group_outputs(zone_outputs)
-					play_pending.push(op.output_id)	
-					await group_enqueue(fixed.players.map(player => player.pid))	
+					play_pending.push({
+						output : op.output_id,
+						fixed : fixed
+					})	
+					await group_enqueue(fixed.players.sort((a, b) => {let fa = a.role == "leader" ? 0 : 1; let fb = b.role == "leader" ? 0 : 1; return fa - fb} )	)	
 				    update_status(false,false)			
 				} 
 			}	
@@ -483,11 +481,11 @@ async function update_zones(zones){
 			resolve()
 		} else { 
 			const zone =(rheos_zones.get(z))
-			log && console.log("DELETING ZONE",zone?.display_name  + "__" + zone?.zone_id|| rheos.zones.get(z).display_name)
+			log && console.log("DELETING ZONE",zone?.display_name  + "  " + zone?.zone_id|| rheos.zones.get(z).display_name)
 			if (zone?.outputs.filter(op => get_pid(op.source_controls[0].display_name)).length >1){
 				const lead_player_pid = get_pid(zone.outputs[0]?.source_controls[0]?.display_name)
 				const group = (rheos_groups.get(lead_player_pid))
-				if (group?.gid) {await group_enqueue(group.players.map(player => player.pid))}
+				if (group?.gid) {await group_enqueue(lead_player_pid)}
 			} 
 			rheos_zones.delete(zone?.zone_id || z)	
 			resolve()	
