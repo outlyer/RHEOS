@@ -1,4 +1,4 @@
 config.json
 UPnP/common.log
 UPnP/Profiles/*.*
-!UPnP/Profiles/config.xml
+
