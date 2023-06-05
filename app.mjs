@@ -214,8 +214,17 @@ async function create_root_xml() {
 		try {
 			log && console.error("CREATING CONFIG FILE FROM IP", ip.address())
 			rheos.mode = true
-			let app = await choose_binary()		
-			await execFileSync(app, ['-i', './UPnP/Profiles/config.xml', '-b', ip.address()])	
+			let app = await choose_binary()	
+			try {
+				const content = '';
+				await fs.writeFile('./UPnP/Profiles/config.xml', content);
+			  	await execFileSync(app, ['-i', './UPnP/Profiles/config.xml', '-b', ip.address()])
+			
+			} catch (err) {
+				console.log(err);
+			}
+			
+				
 			resolve()
 		} 
 		catch {
