@@ -1,4 +1,4 @@
-const version = "0.6.5-15"
+const version = "0.6.5-16"
 "use-strict"
 import RoonApi from "node-roon-api"
 import RoonApiSettings from "node-roon-api-settings"
@@ -426,7 +426,7 @@ async function update_outputs(outputs){
 				let group = [...fixed_groups.values()].find(fixed => fixed.output == op.display_name)
 			        group = [...rheos_groups.values()].find(r => r?.sum_group == group?.sum_group)
 				group?.gid && await update_group_volume(op,group)
-				if (op?.volume?.value > my_settings.max_safe_vol || !op.volume.value) { 
+				if (op?.volume?.value > my_settings.max_safe_vol || !op.volume?.value) { 
 					svc_transport.change_volume(op,"absolute",my_settings.max_safe_vol )		
 				}
 			}
@@ -747,7 +747,7 @@ async function connect_roon() {
 	const roon = new RoonApi({
 		extension_id: "com.RHeos.beta",
 		display_name: "Rheos",
-		display_version: "0.6.5-15",
+		display_version: "0.6.5-16",
 		publisher: "RHEOS",
 		email: "rheos.control@gmail.com",
 		website: "https:/github.com/LINVALE/RHEOS",
