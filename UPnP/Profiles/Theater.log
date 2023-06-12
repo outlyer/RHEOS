@@ -59,3 +59,74 @@
 [07:54:39.363023] AVTStop:217 [0xc44b00]: uPNP stop (cookie 0x26)
 [07:54:39.506429] _ProcessVolume:754 [0xc44b00]: UPnP Volume local change 0:-1 (master)
 [07:54:39.541100] _SyncNotifState:659 [0xc44b00]: uPNP stop
+[13:39:11.828728] AVTStop:217 [0xc44b00]: uPNP stop (cookie 0x28)
+[13:39:11.881318] _ProcessVolume:754 [0xc44b00]: UPnP Volume local change 38:-1 (master)
+[13:39:15.719755] _SyncNotifState:659 [0xc44b00]: uPNP stop
+[13:39:19.183424] _ProcessVolume:754 [0xc44b00]: UPnP Volume local change 1:-1 (master)
+[13:39:19.682910] _ProcessVolume:754 [0xc44b00]: UPnP Volume local change 3:-1 (master)
+[13:39:20.184940] _ProcessVolume:754 [0xc44b00]: UPnP Volume local change 16:-1 (master)
+[13:39:20.685616] _ProcessVolume:754 [0xc44b00]: UPnP Volume local change 47:-1 (master)
+[13:39:21.188453] _ProcessVolume:754 [0xc44b00]: UPnP Volume local change 42:-1 (master)
+[13:39:26.840331] AVTStop:217 [0xc44b00]: uPNP stop (cookie 0x2a)
+[13:39:27.061207] process_strm:238 [0xbbb140] strm command s
+[13:39:27.061296] process_strm:307 [0xbbb140], strm s autostart: 1 transition period: 0 transition type: 0 codec: f
+[13:39:27.061343] sendSTAT:169 [0xbbb140]: STAT:[STMf] msplayed 0
+[13:39:27.061666] output_start:81 [0xbbb140]: start thread 0
+[13:39:27.061796] sq_callback:343 [0xc44b00]:
+	artist:
+	album:
+	title:Streaming from LMS
+	genre:
+	duration:0.000
+	size:0
+	cover:
+	offset:0
+[13:39:27.061865] sq_callback:382 [0xc44b00]: set current URI (s:0) http://192.168.1.217:40789/bridge-1.flac
+[13:39:27.062014] AVTSetURI:91 [0xc44b00]: uPNP setURI http://192.168.1.217:40789/bridge-1.flac (cookie 0x2b)
+[13:39:27.062536] process_start:1220 [0xbbb140]: codec:f, ch:0, s:0, r:0
+[13:39:27.062916] sendSTAT:169 [0xbbb140]: STAT:[STMc] msplayed 0
+[13:39:27.498464] AVTSetPlayMode:167 [0xc44b00]: uPNP set play mode (cookie 0x2c)
+[13:39:27.498774] AVTPlay:151 [0xc44b00]: uPNP play (cookie 0x2d)
+[13:39:27.595128] output_http_thread:157 [0xbbb140]: got HTTP connection 11
+[13:39:27.595446] _output_new_stream:492 [0xbbb140]: FLAC-0 encoding r:48000 s:16
+[13:39:27.595506] output_http_thread:186 [0xbbb140]: drain is 2621440 (waited 533)
+[13:39:27.596601] handle_http:483 [0xbbb140]: received GET /bridge-1.flac HTTP/1.1
+[13:39:27.596653] handle_http:486 [0xbbb140]: HTTP headers
+Host: 192.168.1.217:40789
+User-Agent: AvegaMediaServer/2.0 Linux/2.6
+Accept: */*
+transferMode.dlna.org: Streaming
+
+[13:39:27.596783] handle_http:573 [0xbbb140]: responding:
+HTTP/1.1 200 OK
+Server: squeezebox-bridge
+Connection: close
+Content-Type: audio/x-flac
+transferMode.dlna.org: Streaming
+Transfer-Encoding: chunked
+
+
+[13:39:27.596830] gain_and_fade:984 [0xbbb140]: track start rate:48000 gain:0
+[13:39:28.040325] _SyncNotifState:687 Theater: uPNP playing
+[13:39:28.043151] sendSTAT:169 [0xbbb140]: STAT:[STMs] msplayed 0
+[13:39:30.826692] _ProcessVolume:754 [0xc44b00]: UPnP Volume local change 43:-1 (master)
+[13:39:31.354747] _ProcessVolume:754 [0xc44b00]: UPnP Volume local change 47:-1 (master)
+[13:39:31.869671] _ProcessVolume:754 [0xc44b00]: UPnP Volume local change 49:-1 (master)
+[13:39:32.873492] _ProcessVolume:754 [0xc44b00]: UPnP Volume local change 50:-1 (master)
+[13:39:33.980679] _ProcessVolume:754 [0xc44b00]: UPnP Volume local change 52:-1 (master)
+[13:39:34.537561] _ProcessVolume:754 [0xc44b00]: UPnP Volume local change 53:-1 (master)
+[13:39:37.042588] _ProcessVolume:754 [0xc44b00]: UPnP Volume local change 52:-1 (master)
+[13:39:37.541858] _ProcessVolume:754 [0xc44b00]: UPnP Volume local change 49:-1 (master)
+[13:39:39.236896] _ProcessVolume:754 [0xc44b00]: UPnP Volume local change 51:-1 (master)
+[13:39:53.488805] output_http_thread:389 [0xbbb140]: end thread 0 (4120889 bytes)
+[13:39:53.488962] _output_end_stream:545 [0xbbb140]: finishing FLAC
+[13:39:53.491540] sendSTAT:169 [0xbbb140]: STAT:[STMf] msplayed 0
+[13:39:53.491624] AVTStop:217 [0xc44b00]: uPNP stop (cookie 0x7b)
+[13:39:54.038286] _ProcessVolume:754 [0xc44b00]: UPnP Volume local change 0:-1 (master)
+[13:39:58.526125] _SyncNotifState:659 [0xc44b00]: uPNP stop
+[17:30:10.909143] Stop:1558 stopping squeezelite devices ...
+[17:30:10.909205] slimproto_close:933 [0xbbb140] slimproto stop for Theater
+[17:30:11.010185] output_close:642 [0xbbb140] close media renderer
+[17:30:11.169068] Stop:1562 terminate update thread ...
+[17:30:11.169343] Stop:1567 terminate main thread ...
+[17:30:11.171521] Stop:1571 stopping UPnP devices ...
