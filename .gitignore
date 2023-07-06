@@ -1,5 +1,7 @@
 config.json
 common.log
 *.xml
+*.log
+*.pid
 !config.xml
 
