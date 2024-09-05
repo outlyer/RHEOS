@@ -465,8 +465,6 @@ async function create_player(player) {
 		['-b', rheos.system_info[0], '-Z',
 		'-M', player.name + "(RHEOS: "+player.model+")",
 		'-x', './UPnP/Profiles/' + player.name + '.xml',
-		'-f', './UPnP/Profiles/' + player.name + '.log',
-		'-p', './UPnP/Profiles/' + player.name + '.pid',
 		'-d','all=info',
 		'-s',rheos.mysettings.upnp_ip || null,
 		'-k'	
@@ -1438,14 +1436,8 @@ async function choose_binary(fixed = false) {
 			await fs.chmod(fixed ? './UPnP/Bin/squeezelite/squeezelite-arm64':'./UPnP/Bin/RHEOS-arm', 0o555)
 			return(fixed ? './UPnP/Bin/squeezelite/squeezelite-armv64':'./UPnP/Bin/RHEOS-arm') 
 		} else if (os.arch() === 'x64'){ 
-			log && console.log("SETTING./UPnP/Bin/squeeze2upnp-linux-x86_64")
-			if (!rheos.mysettings.two_way){
-				await fs.chmod(fixed ? './UPnP/Bin/squeezelite/squeezelite-x86-64':'./UPnP/Bin/RHEOS-x86-64', 0o555)
-				return(fixed ? './UPnP/Bin/squeezelite/squeezelite-x86-64':'./UPnP/Bin/RHEOS-x86-64')
-			} else {
-				await fs.chmod(fixed ? './UPnP/Bin/squeezelite/squeezelite-x86-64':'./UPnP/Bin/squeeze2upnp-linux-x86_64', 0o555)
-				return(fixed ? './UPnP/Bin/squeezelite/squeezelite-x86-64':'./UPnP/Bin/squeeze2upnp-linux-x86_64')
-			}
+			await fs.chmod(fixed ? './UPnP/Bin/squeezelite/squeezelite-x86-64':'./UPnP/Bin/squeeze2upnp-linux-x86_64', 0o555)
+			return(fixed ? './UPnP/Bin/squeezelite/squeezelite-x86-64':'./UPnP/Bin/RHEOS-Linux')
 		} else if (os.arch() === 'ia32'){
 			await fs.chmod(fixed ?'./UPnP/Bin/squeezelite/squeezelite-i386':'./UPnP/Bin/RHEOS-x86', 0o555)
 			return(fixed ? './UPnP/Bin/squeezelite/squeezelite-i386' :'./UPnP/Bin/RHEOS-x86')
