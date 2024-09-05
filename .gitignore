@@ -4,5 +4,6 @@ common.log
 *.log
 *.pid
 !config.xml
-UPnP/Pofiles/
+UPnP/Profiles/
+
 
