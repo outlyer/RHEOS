@@ -5,5 +5,5 @@ common.log
 *.pid
 !config.xml
 UPnP/Profiles/
-
-
+UPnP/server
+UPnP/uuid*
