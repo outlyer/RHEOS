@@ -16,6 +16,7 @@ import HeosApi from "heos-api"
 import RheosConnect from "telnet-client"
 import {clearTimeout } from "node:timers"
 var log = process.argv.includes("-l")||process.argv.includes("-log") 
+var squeezelite ="squeezelite" 
 const fixed_groups = new Map()
 const all_groups = new Map()
 const services = {svc_status:{},svc_transport :{},svc_volume_control :{},svc_settings : {}}
