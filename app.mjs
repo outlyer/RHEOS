@@ -1628,8 +1628,8 @@ async function update_position(zones){
 			if (o.display_name && zone){
 				log && console.log("-> ",new Date().toLocaleString(),"RHEOS: ZONE LOADING NULL",player?.position,o?.now_playing?.seek_position)
 				player.position = 0
-				player.duration = zone.now_playing.length
-				player.now_playing = zone.now_playing
+				player.duration = player.next?.now_playing?.length || zone.now_playing.length
+				player.now_playing = player.next || zone.now_playing
 				await write_meta(player,"Z LOADING")	
 				zone.is_seek_allowed && services.svc_transport.seek(o.zone_id,'absolute',0,(err)=> {err && console.log(" SEEK NOT ALLOWED",err)})
 			} else if (zone && o.seek_position === null ) {	
